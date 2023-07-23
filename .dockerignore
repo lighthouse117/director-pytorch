@@ -1,0 +1,4 @@
+# Dockerignore
+
+wandb
+logs
