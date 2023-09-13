@@ -1,1 +1,1 @@
-# director-pytorch
+# Directorch

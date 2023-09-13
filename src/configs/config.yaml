@@ -1,0 +1,8 @@
+logdir: null
+device: mps
+
+train_steps: 1000
+
+buffer_capacity: 10
+
+batch_size: 1
