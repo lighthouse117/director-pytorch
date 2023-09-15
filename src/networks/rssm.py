@@ -107,3 +107,42 @@ class TransitionModel(nn.Module):
         # Create gaussian distribution
         distribution = torch.distributions.Normal(mean, std)
         return distribution
+
+
+class RecurrentModel(nn.Module):
+    """
+    Output the next deterministic state (h_t) from the previous deterministic state (h_t-1), stochastic state (z_t-1), and action (a_t-1).
+
+    h_t ~ p( h_t | h_t-1, z_t-1, a_t-1 )
+
+    ### Input:
+    - Previous deterministic state (h_t-1)
+    - Previous stochastic state (z_t-1)
+    - Previous action (a_t-1)
+
+    ### Output:
+    - Next deterministic state (h_t)
+    """
+
+    def __init__(
+        self,
+        deterministic_state_size: int,
+        stochastic_state_size: int,
+        action_size: int,
+        hidden_size: int,
+    ):
+        super().__init__()
+
+        self.input_network = nn.Sequential(
+            nn.Linear(stochastic_state_size + action_size, hidden_size),
+            nn.ReLU(),
+        )
+        self.rnn = nn.GRUCell(hidden_size, deterministic_state_size)
+
+    def forward(self, stoch_z: Tensor, action: Tensor, deter_h: Tensor) -> Tensor:
+        x = torch.cat([stoch_z, action], dim=-1)
+        x = self.input_network(x)
+
+        # Input the new input and previous hidden state to the RNN
+        next_deter_h = self.rnn(x, deter_h)
+        return next_deter_h
