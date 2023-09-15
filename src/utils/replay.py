@@ -8,7 +8,7 @@ class ReplayBuffer:
         self,
         capacity: int,
         batch_size: int,
-        observation_dim: tuple[int, ...],
+        observation_shape: tuple[int, ...],
         action_size: int,
     ):
         # Length of the buffer
@@ -18,9 +18,9 @@ class ReplayBuffer:
         self.batch_size = batch_size
 
         # Elements in the buffer
-        self.observations = np.empty((self.capacity, *observation_dim))
-        self.actions = np.empty((self.capacity, action_size))
-        self.next_observations = np.empty((self.capacity, *observation_dim))
+        self.observations = np.empty((self.capacity, *observation_shape))
+        self.actions = np.empty((self.capacity, action_size))  # One-hot
+        self.next_observations = np.empty((self.capacity, *observation_shape))
         self.rewards = np.empty((self.capacity, 1))
         self.terminateds = np.empty((self.capacity, 1))
         self.truncateds = np.empty((self.capacity, 1))
@@ -35,7 +35,6 @@ class ReplayBuffer:
 
     def add(self, transition: Transition):
         """Add a transition to the buffer."""
-
         self.observations[self.current_index] = transition.observation
         self.actions[self.current_index] = transition.action
         self.next_observations[self.current_index] = transition.next_observation
@@ -50,7 +49,6 @@ class ReplayBuffer:
 
     def sample(self) -> TransitionBatch:
         """Sample a batch of transitions from the buffer."""
-
         indices = np.random.randint(
             low=0,
             high=self.capacity if self.full else self.current_index,

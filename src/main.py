@@ -1,12 +1,12 @@
 import torch
 import hydra
 import pprint
-import json
 import gymnasium as gym
 
 from omegaconf import DictConfig, OmegaConf
 from utils.replay import ReplayBuffer
 from utils.transition import Transition
+from networks.pixel import PixelEncoder
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
@@ -31,16 +31,16 @@ def main(config: DictConfig):
 
     env = gym.make("CartPole-v1")
 
-    obs_dim = env.observation_space.shape
-    action_dim = env.action_space.n
+    obs_shape = env.observation_space.shape
+    action_size = env.action_space.n
 
     obs, info = env.reset()
 
     buffer = ReplayBuffer(
         capacity=config.buffer_capacity,
         batch_size=config.batch_size,
-        observation_dim=obs_dim,
-        action_size=action_dim,
+        observation_shape=obs_shape,
+        action_size=action_size,
     )
 
     while buffer.full is False:
@@ -63,10 +63,13 @@ def main(config: DictConfig):
         if terminated or truncated:
             obs, info = env.reset()
 
-    print(buffer.actions)
+    x = torch.randn(16, 3, 64, 64)
 
-    transitions = buffer.sample()
-    pprint.pprint(transitions)
+    encoder = PixelEncoder(
+        observation_shape=x.shape[1:],
+    )
+
+    print(encoder(x).shape)
 
 
 if __name__ == "__main__":
