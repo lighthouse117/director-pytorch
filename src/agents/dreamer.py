@@ -36,10 +36,16 @@ class DreamerAgent:
         #     config=config.decoder,
         # ).to(device)
 
-        self.optimiser = torch.optim.Adam(
-            params=self.world_model.parameters(), lr=config.lr
+        self.model_parameters = list(self.world_model.parameters()) + list(
+            self.encoder.parameters()
         )
 
-    def train(self):
-        data_batch: TransitionBatch = self.replay_buffer.sample()
-        self.world_model.train(data_batch)
+        self.optimiser = torch.optim.Adam(
+            params=self.model_parameters, lr=config.learning_rate
+        )
+
+    def train(self, transitions: TransitionBatch):
+        self.world_model.train()
+
+    def policy(self, observation: torch.Tensor) -> torch.Tensor:
+        pass

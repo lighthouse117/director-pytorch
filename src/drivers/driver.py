@@ -1,3 +1,5 @@
+import gymnasium as gym
+
 from agents.dreamer import DreamerAgent
 from utils.transition import Transition
 from utils.replay import ReplayBuffer
@@ -10,7 +12,7 @@ class Driver:
 
     def __init__(
         self,
-        env,
+        env: gym.Env,
         agent: DreamerAgent,
         buffer: ReplayBuffer,
     ):
@@ -25,7 +27,8 @@ class Driver:
         obs, info = self.env.reset()
 
         for step in range(max_steps):
-            action = self.agent.policy(obs)
+            # action = self.agent.policy(obs)
+            action = self.env.action_space.sample()
 
             next_obs, reward, terminated, truncated, info = self.env.step(action)
 
@@ -38,7 +41,7 @@ class Driver:
                 truncated=truncated,
             )
 
-            self.agent.train(transition)
+            # self.agent.train(transition)
 
             obs = next_obs
 

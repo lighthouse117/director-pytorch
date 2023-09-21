@@ -52,6 +52,9 @@ class PixelEncoder(nn.Module):
         )
 
         if self.cnn_output_size != embedded_observation_size:
+            print(
+                f"Reshaping CNN output from {self.cnn_output_size} to {embedded_observation_size}\n"
+            )
             self.fc = nn.Linear(self.cnn_output_size, embedded_observation_size)
         else:
             self.fc = nn.Identity()

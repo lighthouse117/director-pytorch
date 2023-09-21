@@ -7,7 +7,7 @@ from omegaconf import DictConfig, OmegaConf
 from agents.dreamer import DreamerAgent
 from utils.replay import ReplayBuffer
 from drivers.driver import Driver
-from gymnasium.wrappers import PixelObservationWrapper
+from envs.wrappers import ChannelFirstEnv, PixelEnv, ResizeImageEnv
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
@@ -29,17 +29,21 @@ def main(config: DictConfig):
             print("Using Apple's MPS.")
     elif config.device == "cpu":
         print("Using CPU.")
+    print()
 
     # ----------------------------------------
 
     # Create environment
     env_name = config.environment.name
-    env = PixelObservationWrapper(gym.make(env_name, render_mode="rgb_array"))
-    obs_shape = env.observation_space.shape
+    env = PixelEnv(gym.make(env_name, render_mode="rgb_array"))
+    env = ResizeImageEnv(env, (128, 128))
+    env = ChannelFirstEnv(env)
+    obs, _ = env.reset()
+    obs_shape = obs.shape
     action_size = env.action_space.n
-    print(f"<{env_name}>")
+    print(f"< {env_name} >")
     print(f"observation space: {obs_shape}")
-    print(f"action size: {action_size}")
+    print(f"action size: {action_size}\n")
 
     # Create agent
     agent = DreamerAgent(
