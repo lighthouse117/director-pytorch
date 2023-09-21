@@ -2,16 +2,7 @@ import torch
 from torch import nn
 from torch import Tensor
 
-
-class RSSM(nn.Module):
-    """Recurrent State Space Model."""
-
-    def __init__(
-        self,
-    ):
-        super().__init__()
-        self.representation_model = RepresentationModel()
-        self.transition_model = TransitionModel()
+from omegaconf import DictConfig
 
 
 class RepresentationModel(nn.Module):
@@ -35,14 +26,16 @@ class RepresentationModel(nn.Module):
         embeded_observation_size: int,
         deterministic_state_size: int,
         stochastic_state_size: int,
-        hidden_size: int,
+        config: DictConfig,
     ):
         super().__init__()
 
         self.network = nn.Sequential(
-            nn.Linear(embeded_observation_size + deterministic_state_size, hidden_size),
+            nn.Linear(
+                embeded_observation_size + deterministic_state_size, config.hidden_size
+            ),
             nn.ReLU(),
-            nn.Linear(hidden_size, stochastic_state_size * 2),
+            nn.Linear(config.hidden_size, stochastic_state_size * 2),
             # Outputs mean and std for gaussian distribution
         )
 
@@ -82,14 +75,14 @@ class TransitionModel(nn.Module):
         self,
         deterministic_state_size: int,
         stochastic_state_size: int,
-        hidden_size: int,
+        config: DictConfig,
     ):
         super().__init__()
 
         self.network = nn.Sequential(
-            nn.Linear(deterministic_state_size, hidden_size),
+            nn.Linear(deterministic_state_size, config.hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, stochastic_state_size * 2),
+            nn.Linear(config.hidden_size, stochastic_state_size * 2),
             # Outputs mean and std for gaussian distribution
         )
 
@@ -129,15 +122,15 @@ class RecurrentModel(nn.Module):
         deterministic_state_size: int,
         stochastic_state_size: int,
         action_size: int,
-        hidden_size: int,
+        config: DictConfig,
     ):
         super().__init__()
 
         self.input_network = nn.Sequential(
-            nn.Linear(stochastic_state_size + action_size, hidden_size),
+            nn.Linear(stochastic_state_size + action_size, config.hidden_size),
             nn.ReLU(),
         )
-        self.rnn = nn.GRUCell(hidden_size, deterministic_state_size)
+        self.rnn = nn.GRUCell(config.hidden_size, deterministic_state_size)
 
     def forward(self, stoch_z: Tensor, action: Tensor, deter_h: Tensor) -> Tensor:
         x = torch.cat([stoch_z, action], dim=-1)

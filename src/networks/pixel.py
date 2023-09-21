@@ -2,6 +2,8 @@ import torch
 import numpy as np
 from torch import nn
 
+from omegaconf import DictConfig
+
 
 class PixelEncoder(nn.Module):
     """
@@ -11,51 +13,46 @@ class PixelEncoder(nn.Module):
     def __init__(
         self,
         observation_shape: tuple[int, ...],
-        latent_size=128,
-        depth=32,
-        kernel_size=4,
-        stride=2,
+        embedded_observation_size: int,
+        config: DictConfig,
     ):
         super().__init__()
 
         self.observation_shape = observation_shape
-        self.depth = depth
-        self.kernel_size = kernel_size
-        self.stride = stride
 
         self.convs = nn.Sequential(
             nn.Conv2d(
                 in_channels=observation_shape[0],
-                out_channels=depth,
-                kernel_size=kernel_size,
-                stride=stride,
+                out_channels=config.depth,
+                kernel_size=config.kernel_size,
+                stride=config.stride,
             ),
             nn.ReLU(),
             nn.Conv2d(
-                in_channels=depth,
-                out_channels=depth * 2,
-                kernel_size=kernel_size,
-                stride=stride,
+                in_channels=config.depth,
+                out_channels=config.depth * 2,
+                kernel_size=config.kernel_size,
+                stride=config.stride,
             ),
             nn.ReLU(),
             nn.Conv2d(
-                in_channels=depth * 2,
-                out_channels=depth * 4,
-                kernel_size=kernel_size,
-                stride=stride,
+                in_channels=config.depth * 2,
+                out_channels=config.depth * 4,
+                kernel_size=config.kernel_size,
+                stride=config.stride,
             ),
             nn.ReLU(),
             nn.Conv2d(
-                in_channels=depth * 4,
-                out_channels=depth * 8,
-                kernel_size=kernel_size,
-                stride=stride,
+                in_channels=config.depth * 4,
+                out_channels=config.depth * 8,
+                kernel_size=config.kernel_size,
+                stride=config.stride,
             ),
             nn.ReLU(),
         )
 
-        if self.cnn_output_size != latent_size:
-            self.fc = nn.Linear(self.cnn_output_size, latent_size)
+        if self.cnn_output_size != embedded_observation_size:
+            self.fc = nn.Linear(self.cnn_output_size, embedded_observation_size)
         else:
             self.fc = nn.Identity()
 

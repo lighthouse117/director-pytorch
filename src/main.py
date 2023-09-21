@@ -4,9 +4,10 @@ import pprint
 import gymnasium as gym
 
 from omegaconf import DictConfig, OmegaConf
+from agents.dreamer import DreamerAgent
 from utils.replay import ReplayBuffer
-from utils.transition import Transition
-from networks.pixel import PixelEncoder
+from drivers.driver import Driver
+from gymnasium.wrappers import PixelObservationWrapper
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
@@ -29,47 +30,36 @@ def main(config: DictConfig):
     elif config.device == "cpu":
         print("Using CPU.")
 
-    env = gym.make("CartPole-v1")
+    # ----------------------------------------
 
+    # Create environment
+    env_name = config.environment.name
+    env = PixelObservationWrapper(gym.make(env_name, render_mode="rgb_array"))
     obs_shape = env.observation_space.shape
     action_size = env.action_space.n
+    print(f"<{env_name}>")
+    print(f"observation space: {obs_shape}")
+    print(f"action size: {action_size}")
 
-    obs, info = env.reset()
-
-    buffer = ReplayBuffer(
-        capacity=config.buffer_capacity,
-        batch_size=config.batch_size,
+    # Create agent
+    agent = DreamerAgent(
         observation_shape=obs_shape,
         action_size=action_size,
+        device=config.device,
+        config=config.agent,
     )
 
-    while buffer.full is False:
-        action = env.action_space.sample()
-        next_obs, reward, terminated, truncated, info = env.step(action)
-
-        transition = Transition(
-            observation=obs,
-            action=action,
-            next_observation=next_obs,
-            reward=reward,
-            terminated=terminated,
-            truncated=truncated,
-        )
-
-        buffer.add(transition)
-
-        obs = next_obs
-
-        if terminated or truncated:
-            obs, info = env.reset()
-
-    x = torch.randn(16, 3, 64, 64)
-
-    encoder = PixelEncoder(
-        observation_shape=x.shape[1:],
+    # Create replay buffer
+    buffer = ReplayBuffer(
+        observation_shape=obs_shape,
+        action_size=action_size,
+        device=config.device,
+        config=config.replay_buffer,
     )
 
-    print(encoder(x).shape)
+    driver = Driver(env=env, agent=agent, buffer=buffer)
+
+    driver.run(max_steps=1000)
 
 
 if __name__ == "__main__":

@@ -1,25 +1,30 @@
 import torch
 import numpy as np
+
+from omegaconf import DictConfig
 from utils.transition import Transition, TransitionBatch
 
 
 class ReplayBuffer:
     def __init__(
         self,
-        capacity: int,
-        batch_size: int,
         observation_shape: tuple[int, ...],
         action_size: int,
+        device: str,
+        config: DictConfig,
     ):
+        self.device = device
+        self.config = config
+
         # Length of the buffer
-        self.capacity = capacity
+        self.capacity: int = config.capacity
 
         # Batch size for sampling
-        self.batch_size = batch_size
+        self.batch_size: int = config.batch_size
 
         # Elements in the buffer
         self.observations = np.empty((self.capacity, *observation_shape))
-        self.actions = np.empty((self.capacity, action_size))  # One-hot
+        self.actions = np.empty((self.capacity, action_size))  # One-hot encoded
         self.next_observations = np.empty((self.capacity, *observation_shape))
         self.rewards = np.empty((self.capacity, 1))
         self.terminateds = np.empty((self.capacity, 1))

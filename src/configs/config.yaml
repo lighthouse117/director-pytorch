@@ -3,6 +3,42 @@ device: mps
 
 train_steps: 1000
 
-buffer_capacity: 10
+environment:
+  name: CartPole-v1
+  seed: 0
 
-batch_size: 1
+
+replay_buffer:
+  capacity: 1000
+  batch_size: 8
+
+
+agent:
+
+  world_model:
+    embedded_observation_size: 64
+    deterministic_state_size: 64
+    stochastic_state_size: 64
+
+    representation_model:
+      hidden_size: 64
+    
+    transition_model:
+      hidden_size: 64
+
+    recurrent_model:
+      hidden_size: 64
+
+    reward_model:
+      hidden_size: 64
+    
+    cost_model:
+      hidden_size: 64
+      
+  
+  encoder:
+    depth: 32
+    kernel_size: 4
+    stride: 2
+
+
