@@ -40,3 +40,6 @@ class TransitionBatch:
     rewards: Tensor | None
     terminateds: Tensor | None
     truncateds: Tensor | None
+
+    def __len__(self) -> int:
+        return len(self.observations)

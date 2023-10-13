@@ -24,18 +24,6 @@ class DreamerAgent:
             config=config.world_model,
         )
 
-        self.encoder = PixelEncoder(
-            observation_shape=observation_shape,
-            embedded_observation_size=config.world_model.embedded_observation_size,
-            config=config.encoder,
-        ).to(device)
-
-        # self.decoder = PixelDecoder(
-        #     observation_shape=observation_shape,
-        #     embedded_observation_size=config.world_model.embedded_observation_size,
-        #     config=config.decoder,
-        # ).to(device)
-
         self.model_parameters = list(self.world_model.parameters()) + list(
             self.encoder.parameters()
         )
@@ -45,7 +33,8 @@ class DreamerAgent:
         )
 
     def train(self, transitions: TransitionBatch):
-        self.world_model.train()
+        # Update the world model
+        self.world_model.train(transitions)
 
     def policy(self, observation: torch.Tensor) -> torch.Tensor:
         pass

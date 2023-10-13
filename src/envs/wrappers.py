@@ -6,14 +6,16 @@ from gymnasium.wrappers import PixelObservationWrapper
 
 
 class PixelEnv(gym.ObservationWrapper):
-    """Convert observation to pixels."""
+    """Use image as observation."""
 
     def __init__(self, env):
         env = PixelObservationWrapper(env)
         super().__init__(env)
 
     def observation(self, obs):
-        return obs["pixels"]
+        # Normalize image from [0, 255] to [0, 1]
+        image = obs["pixels"] / 255.0
+        return image
 
 
 class ChannelFirstEnv(gym.ObservationWrapper):

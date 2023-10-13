@@ -1,12 +1,14 @@
 logdir: null
 device: mps
 
-train_steps: 1000
+total_steps: 1000
+train_every: 5
 
 environment:
   name: CartPole-v1
+  image_width: 256
+  image_height: 256
   seed: 0
-
 
 replay_buffer:
   capacity: 1000
@@ -20,6 +22,16 @@ agent:
     embedded_observation_size: 1024
     deterministic_state_size: 64
     stochastic_state_size: 64
+
+    encoder:
+      depth: 32
+      kernel_size: 4
+      stride: 2
+    
+    decoder:
+      depth: 32
+      kernel_size: 4
+      stride: 2
 
     representation_model:
       hidden_size: 64
@@ -37,9 +49,5 @@ agent:
       hidden_size: 64
       
   
-  encoder:
-    depth: 32
-    kernel_size: 4
-    stride: 2
 
 

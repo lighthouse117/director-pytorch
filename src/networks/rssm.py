@@ -18,7 +18,7 @@ class RepresentationModel(nn.Module):
     ### Output:
     - Gaussian distribution of stochastic state (z)
 
-    Agent tries to infer the current state using both past information and current observation.
+    Agent tries to infer the current state using both past information h and current observation o.
     """
 
     def __init__(

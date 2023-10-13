@@ -33,10 +33,10 @@ class ReplayBuffer:
         # Current position in the buffer
         self.current_index = 0
 
-        self.full = False
+        self.is_full = False
 
     def __len__(self):
-        return self.capacity if self.full else self.current_index
+        return self.capacity if self.is_full else self.current_index
 
     def add(self, transition: Transition):
         """Add a transition to the buffer."""
@@ -50,13 +50,13 @@ class ReplayBuffer:
         self.current_index = (self.current_index + 1) % self.capacity
 
         if self.current_index == 0:
-            self.full = True
+            self.is_full = True
 
     def sample(self) -> TransitionBatch:
         """Sample a batch of transitions from the buffer."""
         indices = np.random.randint(
             low=0,
-            high=self.capacity if self.full else self.current_index,
+            high=self.capacity if self.is_full else self.current_index,
             size=self.batch_size,
         )
 
