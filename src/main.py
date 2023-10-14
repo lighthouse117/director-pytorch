@@ -70,11 +70,13 @@ def main(config: DictConfig):
         env=env,
         agent=agent,
         buffer=buffer,
-        config=config,
     )
 
     # Start training
-    driver.run(max_steps=1000)
+    driver.run(
+        max_steps=config.total_steps,
+        train_every=config.train_every,
+    )
 
 
 if __name__ == "__main__":

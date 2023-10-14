@@ -60,11 +60,36 @@ class ReplayBuffer:
             size=self.batch_size,
         )
 
+        # Convert to tensors and return the batch
         return TransitionBatch(
-            observations=torch.as_tensor(self.observations[indices]),
-            actions=torch.as_tensor(self.actions[indices]),
-            next_observations=torch.as_tensor(self.next_observations[indices]),
-            rewards=torch.as_tensor(self.rewards[indices]),
-            terminateds=torch.as_tensor(self.terminateds[indices]),
-            truncateds=torch.as_tensor(self.truncateds[indices]),
+            observations=torch.as_tensor(
+                self.observations[indices],
+                dtype=torch.float,
+                device=self.device,
+            ),
+            actions=torch.as_tensor(
+                self.actions[indices],
+                dtype=torch.float,
+                device=self.device,
+            ),
+            next_observations=torch.as_tensor(
+                self.next_observations[indices],
+                dtype=torch.float,
+                device=self.device,
+            ),
+            rewards=torch.as_tensor(
+                self.rewards[indices],
+                dtype=torch.float,
+                device=self.device,
+            ),
+            terminateds=torch.as_tensor(
+                self.terminateds[indices],
+                dtype=torch.float,
+                device=self.device,
+            ),
+            truncateds=torch.as_tensor(
+                self.truncateds[indices],
+                dtype=torch.float,
+                device=self.device,
+            ),
         )

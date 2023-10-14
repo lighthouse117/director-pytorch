@@ -27,13 +27,18 @@ class Driver:
         """
         Run environment steps and train until reaching max_steps.
         """
+        # Start training
+        print(f"Start training for {max_steps} steps.")
+
+        total_step = 0
+
         # Fill the replay buffer
         print("Filling the replay buffer...\n")
         obs, info = self.env.reset()
         while not self.buffer.is_full:
             action = self.env.action_space.sample()
             next_obs, reward, terminated, truncated, info = self.env.step(action)
-            env_step += 1
+            total_step += 1
             transition = Transition(
                 observation=obs,
                 action=action,
@@ -46,13 +51,12 @@ class Driver:
             obs = next_obs
             if terminated or truncated:
                 obs, info = self.env.reset()
+        print(f"Replay buffer has {len(self.buffer)} transitions.\n")
 
-        # Start training
-        print(f"Start training for {max_steps} steps.")
         obs, info = self.env.reset()
         env_step = 0
 
-        for total_step in range(max_steps):
+        while total_step < max_steps:
             # action = self.agent.policy(obs)
             action = self.env.action_space.sample()
 
@@ -60,6 +64,7 @@ class Driver:
             next_obs, reward, terminated, truncated, info = self.env.step(action)
 
             env_step += 1
+            total_step += 1
 
             transition = Transition(
                 observation=obs,
@@ -81,11 +86,12 @@ class Driver:
                 env_step = 0
 
             if total_step % train_every == 0:
-                print(f"Training at step {total_step}.")
+                # print(f"Training at step {total_step}.")
+
                 # Get a batch from the buffer
                 transitions = self.buffer.sample()
 
                 # Train agent with the batch data
                 self.agent.train(transitions)
 
-        print("Finished.")
+        print("Training finished.")

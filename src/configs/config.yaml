@@ -1,7 +1,7 @@
 logdir: null
-device: mps
+device: cpu
 
-total_steps: 1000
+total_steps: 2000
 train_every: 5
 
 environment:
@@ -19,7 +19,7 @@ agent:
   learning_rate: 0.001
 
   world_model:
-    embedded_observation_size: 1024
+    embedded_observation_size: 256
     deterministic_state_size: 64
     stochastic_state_size: 64
 
@@ -30,7 +30,7 @@ agent:
     
     decoder:
       depth: 32
-      kernel_size: 4
+      kernel_size: 5
       stride: 2
 
     representation_model:

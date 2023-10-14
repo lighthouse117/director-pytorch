@@ -24,9 +24,7 @@ class DreamerAgent:
             config=config.world_model,
         )
 
-        self.model_parameters = list(self.world_model.parameters()) + list(
-            self.encoder.parameters()
-        )
+        self.model_parameters = list(self.world_model.parameters())
 
         self.optimiser = torch.optim.Adam(
             params=self.model_parameters, lr=config.learning_rate
