@@ -39,7 +39,11 @@ class RepresentationModel(nn.Module):
             # Outputs mean and std for gaussian distribution
         )
 
-    def forward(self, embeded_o: Tensor, deter_h: Tensor) -> Tensor:
+    def forward(
+        self,
+        embeded_o: Tensor,
+        deter_h: Tensor,
+    ) -> torch.distributions.Distribution:
         x = torch.cat([embeded_o, deter_h], dim=-1)
         x = self.network(x)
 
@@ -86,7 +90,10 @@ class TransitionModel(nn.Module):
             # Outputs mean and std for gaussian distribution
         )
 
-    def forward(self, deter_h: Tensor) -> Tensor:
+    def forward(
+        self,
+        deter_h: Tensor,
+    ) -> torch.distributions.Distribution:
         x = self.network(deter_h)
 
         # Split concatenated output into mean and standard deviation
@@ -132,7 +139,12 @@ class RecurrentModel(nn.Module):
         )
         self.rnn = nn.GRUCell(config.hidden_size, deterministic_state_size)
 
-    def forward(self, stoch_z: Tensor, action: Tensor, deter_h: Tensor) -> Tensor:
+    def forward(
+        self,
+        stoch_z: Tensor,
+        action: Tensor,
+        deter_h: Tensor,
+    ) -> Tensor:
         x = torch.cat([stoch_z, action], dim=-1)
         x = self.input_network(x)
 

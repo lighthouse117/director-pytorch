@@ -2,7 +2,7 @@ import torch
 
 from omegaconf import DictConfig
 from models.world_model import WorldModel
-from utils.transition import Transition, TransitionBatch
+from utils.transition import Transition, TransitionSequenceBatch
 from networks.pixel import PixelEncoder, PixelDecoder
 
 
@@ -24,15 +24,11 @@ class DreamerAgent:
             config=config.world_model,
         )
 
-        self.model_parameters = list(self.world_model.parameters())
-
-        self.optimiser = torch.optim.Adam(
-            params=self.model_parameters, lr=config.learning_rate
-        )
-
-    def train(self, transitions: TransitionBatch):
+    def train(self, transitions: TransitionSequenceBatch) -> dict:
         # Update the world model
-        self.world_model.train(transitions)
+        metrics = self.world_model.train(transitions)
+
+        return metrics
 
     def policy(self, observation: torch.Tensor) -> torch.Tensor:
         pass

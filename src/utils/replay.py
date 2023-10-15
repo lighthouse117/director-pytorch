@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from omegaconf import DictConfig
-from utils.transition import Transition, TransitionBatch
+from utils.transition import Transition, TransitionSequenceBatch
 
 
 class ReplayBuffer:
@@ -21,6 +21,9 @@ class ReplayBuffer:
 
         # Batch size for sampling
         self.batch_size: int = config.batch_size
+
+        # Chunk length for sampling
+        self.chunk_length: int = config.chunk_length
 
         # Elements in the buffer
         self.observations = np.empty((self.capacity, *observation_shape))
@@ -52,16 +55,32 @@ class ReplayBuffer:
         if self.current_index == 0:
             self.is_full = True
 
-    def sample(self) -> TransitionBatch:
-        """Sample a batch of transitions from the buffer."""
-        indices = np.random.randint(
+    def sample(self) -> TransitionSequenceBatch:
+        """
+        Sample a batch of consecutive transitions from the buffer.
+
+        Each transition sequence has the length of `chunk_length`.
+        """
+
+        start_positions = np.random.randint(
             low=0,
-            high=self.capacity if self.is_full else self.current_index,
+            high=self.capacity
+            if self.is_full
+            else self.current_index - self.chunk_length,
             size=self.batch_size,
+        )
+        indices = (
+            np.array(
+                [
+                    np.arange(start, start + self.chunk_length)
+                    for start in start_positions
+                ]
+            )
+            % self.capacity
         )
 
         # Convert to tensors and return the batch
-        return TransitionBatch(
+        return TransitionSequenceBatch(
             observations=torch.as_tensor(
                 self.observations[indices],
                 dtype=torch.float,
@@ -93,3 +112,39 @@ class ReplayBuffer:
                 device=self.device,
             ),
         )
+
+
+# TODO
+class IOEpisodeReplayBuffer:
+    """
+    A replay buffer that stores transitions using local npz files.
+
+    Each episode is stored in a seperate file.
+
+    When sampling a batch, it randomly selects an episode and samples a chunk of
+    consecutive transitions from that episode.
+    """
+
+    def __init__(
+        self,
+        observation_shape: tuple[int, ...],
+        action_size: int,
+        device: str,
+        config: DictConfig,
+    ):
+        pass
+
+    def __len__(self):
+        pass
+
+    def add(self, transition: Transition):
+        """Add a transition to the buffer."""
+        pass
+
+    def sample(self) -> TransitionSequenceBatch:
+        """
+        Sample a batch of consecutive transitions from the buffer.
+
+        Each transition sequence has the length of `chunk_length`.
+        """
+        pass

@@ -67,9 +67,8 @@ class Driver:
             total_step += 1
 
             transition = Transition(
-                observation=obs,
+                observation=next_obs,
                 action=action,
-                next_observation=next_obs,
                 reward=reward,
                 terminated=terminated,
                 truncated=truncated,
@@ -92,6 +91,10 @@ class Driver:
                 transitions = self.buffer.sample()
 
                 # Train agent with the batch data
-                self.agent.train(transitions)
+                metrics = self.agent.train(transitions)
+
+                # Print metrics
+                if total_step % 100 == 0:
+                    print(f"Step {total_step}: {metrics}")
 
         print("Training finished.")

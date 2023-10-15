@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from torch import nn
 
+from torch import nn, Tensor
 from omegaconf import DictConfig
 
 
@@ -72,14 +72,24 @@ class PixelEncoder(nn.Module):
         else:
             self.fc = nn.Identity()
 
-    def forward(self, observation: torch.Tensor) -> torch.Tensor:
+    def forward(self, observation: Tensor) -> Tensor:
+        # Reshape the input to stack the batch and chunk dimensions and encode all images at once
+        # [Batch, Chunk, Channels, Height, Width] -> [Batch * Chunk, Channels, Height, Width]
+        x = observation.reshape(-1, *self.observation_shape)
+
         # Pass the observation through the CNNs
-        x: torch.Tensor = self.convs(observation)
+        x: Tensor = self.convs(x)
+
         # Flatten the values after the first batch dimension
         # [Batch, Channels, Height, Width] -> [Batch, Channels * Height * Width]
         x = x.flatten(start_dim=1)
+
         # Adjust the shape of the output if necessary
         x = self.fc(x)
+
+        # Reshape the output to make it back into a batch of chunks
+        # [Batch * Chunk, Embedded Observation Size] -> [Batch, Chunk, Embedded Observation Size]
+        x = x.reshape(*observation.shape[:-3], self.embedded_observation_size)
         return x
 
     @property
@@ -156,14 +166,19 @@ class PixelDecoder(nn.Module):
             ),
         )
 
-    def forward(self, deter_h: torch.Tensor, stoch_z: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        deter_h: Tensor,
+        stoch_z: Tensor,
+    ) -> torch.distributions.Distribution:
         # Concatenate the inputs
         x = torch.cat([deter_h, stoch_z], dim=-1)
+
         # Pass the inputs through the linear layer
-        x: torch.Tensor = self.fc(x)
+        x: Tensor = self.fc(x)
 
         # Reshape the output to match the input shape of the CNNs
-        # [Batch, Channels * Height * Width] -> [Batch, Channels, Height, Width]
+        # [Batch * Chunk, Channels * Height * Width] -> [Batch * Chunk, Channels, Height, Width]
         x = x.reshape(-1, self.config.depth * 32, 1, 1)
 
         # Pass the inputs through the transposed CNNs
@@ -174,16 +189,10 @@ class PixelDecoder(nn.Module):
         # Variance is fixed to 1
         base_distribution = torch.distributions.Normal(mean, 1)
 
-        print(f"mean: {mean.shape}")
-        print(f"base_distribution (batch_shape): {base_distribution.batch_shape}")
-        print(f"base_distribution (event_shape): {base_distribution.event_shape}")
-
-        # We need each pixel to be a separate distribution
+        # Need each pixel to be a separate distribution
+        # Specify that the batch dimension is the first dimension
         distribution = torch.distributions.Independent(
             base_distribution, reinterpreted_batch_ndims=3
         )
-
-        print(f"distribution (batch_shape): {distribution.batch_shape}")
-        print(f"distribution (event_shape): {distribution.event_shape}")
 
         return distribution

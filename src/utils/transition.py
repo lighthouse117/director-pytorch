@@ -8,7 +8,6 @@ class Transition:
     A transition data at a single timestep.
     - observation: (*observation_shape)
     - action: (action_size,)
-    - next_observation: (*observation_shape)
     - reward: (1,)
     - terminated: (1,)
     - truncated: (1,)
@@ -16,30 +15,36 @@ class Transition:
 
     observation: Tensor | None
     action: Tensor | None
-    next_observation: Tensor | None
     reward: Tensor | None
     terminated: Tensor | None
     truncated: Tensor | None
 
 
 @dataclass
-class TransitionBatch:
+class TransitionSequenceBatch:
     """
     A batch of transitions.
-    - observations: (batch_size, *observation_shape)
-    - actions: (batch_size, action_size)
-    - next_observations: (batch_size, *observation_shape)
-    - rewards: (batch_size, 1)
-    - terminateds: (batch_size, 1)
-    - truncateds: (batch_size, 1)
+    - observations: (batch_size, chunk_length, *observation_shape)
+    - actions: (batch_size, chunk_length, action_size)
+    - rewards: (batch_size, chunk_length, 1)
+    - terminateds: (batch_size, chunk_length, 1)
+    - truncateds: (batch_size, chunk_length, 1)
     """
 
     observations: Tensor | None
     actions: Tensor | None
-    next_observations: Tensor | None
     rewards: Tensor | None
     terminateds: Tensor | None
     truncateds: Tensor | None
 
     def __len__(self) -> int:
         return len(self.observations)
+
+    def __str__(self) -> str:
+        return (
+            f"TransitionSequenceBatch(observations={self.observations.shape},\n"
+            f"               actions={self.actions.shape},\n"
+            f"               rewards={self.rewards.shape},\n"
+            f"               terminateds={self.terminateds.shape},\n"
+            f"               truncateds={self.truncateds.shape})"
+        )
