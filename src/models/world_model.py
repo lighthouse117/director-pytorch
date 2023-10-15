@@ -76,6 +76,10 @@ class WorldModel(torch.nn.Module):
 
         chunk_length = len(transitions.observations[0])
 
+        prior_distributions: list[torch.distributions.Distribution] = []
+        posterior_distributions: list[torch.distributions.Distribution] = []
+        deterministic_hs: list[torch.Tensor] = []
+
         # Iterate over timesteps of a chunk
         for t in range(chunk_length):
             # Predict deterministic state h_t from h_t-1, z_t-1, and a_t-1
@@ -93,50 +97,88 @@ class WorldModel(torch.nn.Module):
             # (called Posterior because it is after seeing observation)
             posterior_stochastic_z_distribution: torch.distributions.Distribution = (
                 self.representation_model(
-                    embeded_observation,
+                    embeded_observation[:, t],
                     deterministic_h,
                 )
             )
 
-            # Gaussian distribution of reconstructed image
-            reconstructed_obs_distribution: torch.distributions.Distribution = self.decoder(
-                deterministic_h,
-                # Get reparameterized sample of z
-                posterior_stochastic_z_distribution.rsample(),
+            # Append to list for calculating loss later
+            prior_distributions.append(prior_stochastic_z_distribution)
+            posterior_distributions.append(posterior_stochastic_z_distribution)
+            deterministic_hs.append(deterministic_h)
+
+        # The state list has batch_size * chunk_length elements
+        # We can regard them as a single batch of size (batch_size * chunk_length)
+        # because we don't use recurrent model from here
+
+        deterministic_hs = torch.cat(deterministic_hs, dim=0)
+        # Get reparameterized samples of posterior z
+        sampled_posteriors = torch.cat(
+            [posterior.rsample() for posterior in posterior_distributions], dim=0
+        )
+        # Get gaussian distributions of reconstructed images
+        reconstructed_obs_distributions: torch.distributions.Distribution = (
+            self.decoder(
+                deterministic_hs,
+                sampled_posteriors,
             )
+        )
+        # Calculate reconstruction loss
+        # How likely is the input image generated from the predicted distribution
+        reconstruction_loss = -reconstructed_obs_distributions.log_prob(
+            # [batch_size, chunk_length, *observation_shape]
+            # -> [batch_size * chunk_length, *observation_shape]
+            transitions.observations.reshape(-1, *transitions.observations.shape[-3:])
+        ).mean()
 
         save_image(
-            transitions.observations,
+            transitions.observations[0][0],
             "original.png",
         )
         save_image(
-            reconstructed_obs_distribution.rsample(),
+            reconstructed_obs_distributions.rsample()[0],
             "reconstructed.png",
         )
 
-        # Calculate reconstruction loss
-        # How likely is the input image generated from the predicted distribution
-        reconstruction_loss = -reconstructed_obs_distribution.log_prob(
-            transitions.observations
-        ).mean()
+        # Convert list of distributions to a single distribution
+        prior = torch.distributions.Independent(
+            torch.distributions.Normal(
+                torch.cat([prior.mean for prior in prior_distributions], dim=0),
+                torch.cat([prior.stddev for prior in prior_distributions], dim=0),
+            ),
+            reinterpreted_batch_ndims=1,
+        )
+        posterior = torch.distributions.Independent(
+            torch.distributions.Normal(
+                torch.cat(
+                    [posterior.mean for posterior in posterior_distributions], dim=0
+                ),
+                torch.cat(
+                    [posterior.stddev for posterior in posterior_distributions], dim=0
+                ),
+            ),
+            reinterpreted_batch_ndims=1,
+        )
 
         # Calculate KL divergence loss
         # How different is the prior distribution from the posterior distribution
         kl_divergence_loss = torch.distributions.kl.kl_divergence(
-            posterior_stochastic_z_distribution, prior_stochastic_z_distribution
+            posterior, prior
         ).mean()
 
         total_loss = reconstruction_loss + kl_divergence_loss
 
         # Update the parameters
         self.optimizer.zero_grad()
-        reconstruction_loss.backward()
+        total_loss.backward()
+        # Clip gradients
+        torch.nn.utils.clip_grad_norm_(self.parameters(), 100)
         self.optimizer.step()
 
         metrics = {
             "reconstruction_loss": reconstruction_loss.item(),
-            # "kl_divergence_loss": kl_divergence_loss.item(),
-            # "total_loss": total_loss.item(),
+            "kl_divergence_loss": kl_divergence_loss.item(),
+            "total_loss": total_loss.item(),
         }
 
         return metrics

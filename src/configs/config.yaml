@@ -11,9 +11,9 @@ environment:
   seed: 0
 
 replay_buffer:
-  capacity: 1000
-  batch_size: 4
-  chunk_length: 8
+  capacity: 10000
+  batch_size: 16
+  chunk_length: 64
 
 
 agent:
@@ -23,6 +23,7 @@ agent:
     stochastic_state_size: 64
 
     learning_rate: 0.001
+    clip_grad: 1.0
 
     encoder:
       depth: 32

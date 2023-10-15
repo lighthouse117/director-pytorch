@@ -27,9 +27,6 @@ class Driver:
         """
         Run environment steps and train until reaching max_steps.
         """
-        # Start training
-        print(f"Start training for {max_steps} steps.")
-
         total_step = 0
 
         # Fill the replay buffer
@@ -40,9 +37,8 @@ class Driver:
             next_obs, reward, terminated, truncated, info = self.env.step(action)
             total_step += 1
             transition = Transition(
-                observation=obs,
+                observation=next_obs,
                 action=action,
-                next_observation=next_obs,
                 reward=reward,
                 terminated=terminated,
                 truncated=truncated,
@@ -55,6 +51,8 @@ class Driver:
 
         obs, info = self.env.reset()
         env_step = 0
+
+        print("Start training...\n")
 
         while total_step < max_steps:
             # action = self.agent.policy(obs)

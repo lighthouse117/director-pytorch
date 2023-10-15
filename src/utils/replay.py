@@ -28,7 +28,6 @@ class ReplayBuffer:
         # Elements in the buffer
         self.observations = np.empty((self.capacity, *observation_shape))
         self.actions = np.empty((self.capacity, action_size))  # One-hot encoded
-        self.next_observations = np.empty((self.capacity, *observation_shape))
         self.rewards = np.empty((self.capacity, 1))
         self.terminateds = np.empty((self.capacity, 1))
         self.truncateds = np.empty((self.capacity, 1))
@@ -45,7 +44,6 @@ class ReplayBuffer:
         """Add a transition to the buffer."""
         self.observations[self.current_index] = transition.observation
         self.actions[self.current_index] = transition.action
-        self.next_observations[self.current_index] = transition.next_observation
         self.rewards[self.current_index] = transition.reward
         self.terminateds[self.current_index] = transition.terminated
         self.truncateds[self.current_index] = transition.truncated
@@ -88,11 +86,6 @@ class ReplayBuffer:
             ),
             actions=torch.as_tensor(
                 self.actions[indices],
-                dtype=torch.float,
-                device=self.device,
-            ),
-            next_observations=torch.as_tensor(
-                self.next_observations[indices],
                 dtype=torch.float,
                 device=self.device,
             ),
