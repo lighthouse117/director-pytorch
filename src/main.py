@@ -6,7 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 from agents.dreamer import DreamerAgent
 from utils.replay import ReplayBuffer
 from drivers.driver import Driver
-from envs.wrappers import ChannelFirstEnv, PixelEnv, ResizeImageEnv
+from envs.wrappers import ChannelFirstEnv, PixelEnv, ResizeImageEnv, ActionRepeatEnv
 
 
 # Use hydra to load configs
@@ -36,7 +36,8 @@ def main(config: DictConfig):
 
     # Create environment
     env_name = config.environment.name
-    env = PixelEnv(gym.make(env_name, render_mode="rgb_array"))
+    env = ActionRepeatEnv(gym.make(env_name, render_mode="rgb_array"), repeat=config.environment.action_repeat)
+    env = PixelEnv(env)
     env = ResizeImageEnv(
         env, (config.environment.image_width, config.environment.image_height)
     )

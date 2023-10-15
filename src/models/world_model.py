@@ -107,6 +107,10 @@ class WorldModel(torch.nn.Module):
             posterior_distributions.append(posterior_stochastic_z_distribution)
             deterministic_hs.append(deterministic_h)
 
+            # Update previous states
+            prev_deterministic_h = deterministic_h
+            prev_stochastic_z = posterior_stochastic_z_distribution.rsample()
+
         # The state list has batch_size * chunk_length elements
         # We can regard them as a single batch of size (batch_size * chunk_length)
         # because we don't use recurrent model from here
@@ -136,7 +140,7 @@ class WorldModel(torch.nn.Module):
             "original.png",
         )
         save_image(
-            reconstructed_obs_distributions.rsample()[0],
+            reconstructed_obs_distributions.mean[0],
             "reconstructed.png",
         )
 
@@ -176,9 +180,9 @@ class WorldModel(torch.nn.Module):
         self.optimizer.step()
 
         metrics = {
-            "reconstruction_loss": reconstruction_loss.item(),
-            "kl_divergence_loss": kl_divergence_loss.item(),
-            "total_loss": total_loss.item(),
+            "reconstruction_loss": round(reconstruction_loss.item(), 3),
+            "kl_divergence_loss": round(kl_divergence_loss.item(), 3),
+            "total_loss": round(total_loss.item(), 3),
         }
 
         return metrics

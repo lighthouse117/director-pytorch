@@ -54,7 +54,7 @@ docker run -it --rm \
     --runtime=nvidia \
     --gpus device=$GPU_NUMBER \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v src:/workspace \
+    -v $(pwd)/src:/workspace \
     --ipc=host \
     --net=host \
     -e DISPLAY=$DISPLAY \

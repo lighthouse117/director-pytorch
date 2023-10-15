@@ -38,3 +38,19 @@ class ResizeImageEnv(gym.ObservationWrapper):
     def observation(self, obs):
         image = cv2.resize(obs, self.size)
         return image
+
+class ActionRepeatEnv(gym.Wrapper):
+    """Repeat action for n steps."""
+
+    def __init__(self, env, repeat=4):
+        super().__init__(env)
+        self.repeat = repeat
+
+    def step(self, action):
+        total_reward = 0.0
+        for _ in range(self.repeat):
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            total_reward += reward
+            if terminated or truncated:
+                break
+        return obs, total_reward, terminated, truncated, info

@@ -1,17 +1,18 @@
 logdir: null
-device: cpu
+device: cuda
 
 total_steps: 100000
 train_every: 5
 
 environment:
-  name: CartPole-v1
+  name: MountainCar-v0
   image_width: 64
   image_height: 64
   seed: 0
+  action_repeat: 10
 
 replay_buffer:
-  capacity: 10000
+  capacity: 5000
   batch_size: 16
   chunk_length: 64
 
@@ -22,7 +23,7 @@ agent:
     deterministic_state_size: 64
     stochastic_state_size: 64
 
-    learning_rate: 0.001
+    learning_rate: 0.0003
     clip_grad: 1.0
 
     encoder:

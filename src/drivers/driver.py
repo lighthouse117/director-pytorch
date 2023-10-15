@@ -2,6 +2,8 @@ import gymnasium as gym
 import numpy as np
 
 from omegaconf import DictConfig
+from tqdm import tqdm
+
 from agents.dreamer import DreamerAgent
 from utils.transition import Transition
 from utils.replay import ReplayBuffer
@@ -31,22 +33,24 @@ class Driver:
 
         # Fill the replay buffer
         print("Filling the replay buffer...\n")
-        obs, info = self.env.reset()
-        while not self.buffer.is_full:
-            action = self.env.action_space.sample()
-            next_obs, reward, terminated, truncated, info = self.env.step(action)
-            total_step += 1
-            transition = Transition(
-                observation=next_obs,
-                action=action,
-                reward=reward,
-                terminated=terminated,
-                truncated=truncated,
-            )
-            self.buffer.add(transition)
-            obs = next_obs
-            if terminated or truncated:
-                obs, info = self.env.reset()
+        with tqdm(total=self.buffer.capacity) as progress_bar:
+            obs, info = self.env.reset()
+            while not self.buffer.is_full:
+                progress_bar.update(1)
+                action = self.env.action_space.sample()
+                next_obs, reward, terminated, truncated, info = self.env.step(action)
+                total_step += 1
+                transition = Transition(
+                    observation=next_obs,
+                    action=action,
+                    reward=reward,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
+                self.buffer.add(transition)
+                obs = next_obs
+                if terminated or truncated:
+                    obs, info = self.env.reset()
         print(f"Replay buffer has {len(self.buffer)} transitions.\n")
 
         obs, info = self.env.reset()
@@ -92,7 +96,7 @@ class Driver:
                 metrics = self.agent.train(transitions)
 
                 # Print metrics
-                if total_step % 100 == 0:
+                if total_step % 1000 == 0:
                     print(f"Step {total_step}: {metrics}")
 
         print("Training finished.")
