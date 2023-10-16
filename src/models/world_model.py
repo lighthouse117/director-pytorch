@@ -1,7 +1,8 @@
 import torch
 
 from omegaconf import DictConfig
-from networks.pixel import PixelEncoder, PixelDecoder
+from networks.encoder import PixelEncoder
+from networks.heads import PixelDecoderHead, RewardHead
 from networks.rssm import RepresentationModel, TransitionModel, RecurrentModel
 from utils.transition import TransitionSequenceBatch
 from torchvision.utils import save_image
@@ -27,13 +28,6 @@ class WorldModel(torch.nn.Module):
             config=config.encoder,
         ).to(device)
 
-        self.decoder = PixelDecoder(
-            observation_shape=observation_shape,
-            deterministic_state_size=config.deterministic_state_size,
-            stochastic_state_size=config.stochastic_state_size,
-            config=config.decoder,
-        ).to(device)
-
         self.representation_model = RepresentationModel(
             embeded_observation_size=config.embedded_observation_size,
             deterministic_state_size=config.deterministic_state_size,
@@ -52,6 +46,19 @@ class WorldModel(torch.nn.Module):
             stochastic_state_size=config.stochastic_state_size,
             action_size=action_size,
             config=config.recurrent_model,
+        ).to(device)
+
+        self.decoder = PixelDecoderHead(
+            observation_shape=observation_shape,
+            deterministic_state_size=config.deterministic_state_size,
+            stochastic_state_size=config.stochastic_state_size,
+            config=config.decoder,
+        ).to(device)
+
+        self.reward_head = RewardHead(
+            deterministic_state_size=config.deterministic_state_size,
+            stochastic_state_size=config.stochastic_state_size,
+            config=config.reward_head,
         ).to(device)
 
         # Optimizer
@@ -170,7 +177,16 @@ class WorldModel(torch.nn.Module):
             posterior, prior
         ).mean()
 
-        total_loss = reconstruction_loss + kl_divergence_loss
+        # Calculate reward prediction loss
+        reward_distribution: torch.distributions.Distribution = self.reward_head(
+            deterministic_hs,
+            sampled_posteriors,
+        )
+        reward_loss = -reward_distribution.log_prob(
+            transitions.rewards.reshape(-1, *transitions.rewards.shape[-1:])
+        ).mean()
+
+        total_loss = reconstruction_loss + kl_divergence_loss + reward_loss
 
         # Update the parameters
         self.optimizer.zero_grad()
@@ -182,6 +198,7 @@ class WorldModel(torch.nn.Module):
         metrics = {
             "reconstruction_loss": round(reconstruction_loss.item(), 3),
             "kl_divergence_loss": round(kl_divergence_loss.item(), 3),
+            "reward_loss": round(reward_loss.item(), 3),
             "total_loss": round(total_loss.item(), 3),
         }
 

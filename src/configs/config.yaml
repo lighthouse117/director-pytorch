@@ -19,7 +19,7 @@ replay_buffer:
 
 agent:
   world_model:
-    embedded_observation_size: 256
+    embedded_observation_size: 1024
     deterministic_state_size: 64
     stochastic_state_size: 64
 
@@ -45,7 +45,7 @@ agent:
     recurrent_model:
       hidden_size: 64
 
-    reward_model:
+    reward_head:
       hidden_size: 64
     
     cost_model:

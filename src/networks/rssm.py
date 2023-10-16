@@ -34,7 +34,7 @@ class RepresentationModel(nn.Module):
             nn.Linear(
                 embeded_observation_size + deterministic_state_size, config.hidden_size
             ),
-            nn.ReLU(),
+            nn.ELU(),
             nn.Linear(config.hidden_size, stochastic_state_size * 2),
             # Outputs mean and std for gaussian distribution
         )
@@ -85,7 +85,7 @@ class TransitionModel(nn.Module):
 
         self.network = nn.Sequential(
             nn.Linear(deterministic_state_size, config.hidden_size),
-            nn.ReLU(),
+            nn.ELU(),
             nn.Linear(config.hidden_size, stochastic_state_size * 2),
             # Outputs mean and std for gaussian distribution
         )
@@ -135,7 +135,7 @@ class RecurrentModel(nn.Module):
 
         self.input_network = nn.Sequential(
             nn.Linear(stochastic_state_size + action_size, config.hidden_size),
-            nn.ReLU(),
+            nn.ELU(),
         )
         self.rnn = nn.GRUCell(config.hidden_size, deterministic_state_size)
 
