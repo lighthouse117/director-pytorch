@@ -13,7 +13,7 @@ class PixelEnv(gym.ObservationWrapper):
         super().__init__(env)
 
     def observation(self, obs):
-        # Normalize image from [0, 255] to [-0.5, 0.5]
+        # Normalize image from [0, 255] to [0, 1]
         image = obs["pixels"] / 255.0
         return image
 

@@ -36,6 +36,7 @@ agent:
       depth: 32
       kernel_size: 5
       stride: 2
+      output: pixel
 
     representation_model:
       hidden_size: 512

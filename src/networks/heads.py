@@ -83,21 +83,28 @@ class PixelDecoderHead(nn.Module):
         # [Batch * Chunk, Channels * Height * Width] -> [Batch * Chunk, Channels, Height, Width]
         x = x.reshape(-1, self.config.depth * 32, 1, 1)
 
-        # Pass the inputs through the transposed CNNs
-        # Output mean of the Gaussian distribution
-        mean = self.convs(x)
+        if self.config.output == "gaussian":
+            # Pass the inputs through the transposed CNNs
+            # Output mean of the Gaussian distribution
+            mean = self.convs(x)
 
-        # Create the Gaussian distribution
-        # Variance is fixed to 1
-        base_distribution = torch.distributions.Normal(mean, 1)
+            # Create the Gaussian distribution
+            # Variance is fixed to 1
+            base_distribution = torch.distributions.Normal(mean, 1)
 
-        # Need each pixel to be a separate distribution
-        # Specify that the batch dimension is the first dimension
-        distribution = torch.distributions.Independent(
-            base_distribution, reinterpreted_batch_ndims=3
-        )
-
-        return distribution
+            # Need each pixel to be a separate distribution
+            # Specify that the batch dimension is the first dimension
+            distribution = torch.distributions.Independent(
+                base_distribution, reinterpreted_batch_ndims=3
+            )
+            return distribution
+        elif self.config.output == "pixel":
+            x = self.convs(x)
+            # Sigmoid to ensure the output is between 0 and 1
+            image = torch.sigmoid(x)
+            return image
+        else:
+            raise NotImplementedError
 
 
 class RewardHead(nn.Module):

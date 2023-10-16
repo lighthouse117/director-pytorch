@@ -127,34 +127,40 @@ class WorldModel(torch.nn.Module):
         sampled_posteriors = torch.cat(
             [posterior.rsample() for posterior in posterior_distributions], dim=0
         )
-        # Get gaussian distributions of reconstructed images
-        reconstructed_obs_distributions: torch.distributions.Distribution = (
-            self.decoder(
-                deterministic_hs,
-                sampled_posteriors,
-            )
-        )
-        # Calculate reconstruction loss (log likelihood version)
-        # How likely is the input image generated from the predicted distribution
-        # reconstruction_loss = -reconstructed_obs_distributions.log_prob(
-        #     # [batch_size, chunk_length, *observation_shape]
-        #     # -> [batch_size * chunk_length, *observation_shape]
-        #     transitions.observations.reshape(-1, *transitions.observations.shape[-3:])
-        # ).mean()
 
-        # Reconstruction loss (MSE version)
-        reconstruction_loss = torch.nn.functional.mse_loss(
-            reconstructed_obs_distributions.mean,
-            transitions.observations.reshape(-1, *transitions.observations.shape[-3:]),
-        )
+        if self.config.decoder.output == "gaussian":
+            # Get gaussian distributions of reconstructed images
+            reconstructed_obs_distributions: torch.distributions.Distribution = (
+                self.decoder(deterministic_hs, sampled_posteriors)
+            )
+            # Calculate reconstruction loss (log likelihood version)
+            # How likely is the input image generated from the predicted distribution
+            reconstruction_loss = -reconstructed_obs_distributions.log_prob(
+                #     # [batch_size, chunk_length, *observation_shape]
+                #     # -> [batch_size * chunk_length, *observation_shape]
+                transitions.observations.reshape(
+                    -1, *transitions.observations.shape[-3:]
+                )
+            ).mean()
+            reconstructed_images = reconstructed_obs_distributions.mean
+        else:
+            # Get reconstructed images
+            reconstructed_images = self.decoder(deterministic_hs, sampled_posteriors)
+            # Reconstruction loss (MSE version)
+            reconstruction_loss = torch.nn.functional.mse_loss(
+                reconstructed_images,
+                transitions.observations.reshape(
+                    -1, *transitions.observations.shape[-3:]
+                ),
+            )
 
         save_image(
             transitions.observations[0][0],
-            "original.png",
+            "outputs/images/original.png",
         )
         save_image(
-            reconstructed_obs_distributions.mean[0],
-            "reconstructed.png",
+            reconstructed_images[0],
+            "outputs/images/reconstructed.png",
         )
 
         # Convert list of distributions to a single distribution
