@@ -7,6 +7,7 @@ from agents.dreamer import DreamerAgent
 from utils.replay import ReplayBuffer
 from drivers.driver import Driver
 from envs.wrappers import ChannelFirstEnv, PixelEnv, ResizeImageEnv, ActionRepeatEnv
+from envs.dmc import DMCGym
 
 
 # Use hydra to load configs
@@ -36,7 +37,8 @@ def main(config: DictConfig):
 
     # Create environment
     env_name = config.environment.name
-    env = ActionRepeatEnv(gym.make(env_name, render_mode="rgb_array"), repeat=config.environment.action_repeat)
+    # env = ActionRepeatEnv(gym.make(env_name, render_mode="rgb_array"), repeat=config.environment.action_repeat)
+    env = DMCGym(domain="cartpole", task="swingup")
     env = PixelEnv(env)
     env = ResizeImageEnv(
         env, (config.environment.image_width, config.environment.image_height)

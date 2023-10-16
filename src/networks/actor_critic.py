@@ -64,7 +64,6 @@ class Critic(nn.Module):
         self,
         deterministic_state_size: int,
         stochastic_state_size: int,
-        action_size: int,
         config: DictConfig,
     ):
         super().__init__()
@@ -73,7 +72,7 @@ class Critic(nn.Module):
 
         self.network = nn.Sequential(
             nn.Linear(
-                deterministic_state_size + stochastic_state_size + action_size,
+                deterministic_state_size + stochastic_state_size,
                 config.hidden_size,
             ),
             nn.ELU(),
@@ -96,5 +95,4 @@ class Critic(nn.Module):
     ) -> Tensor:
         x = torch.cat([deter_h, stoch_z, action], dim=-1)
         x = self.network(x)
-
         return x

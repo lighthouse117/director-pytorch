@@ -25,7 +25,9 @@ class DreamerAgent:
 
     def train(self, transitions: TransitionSequenceBatch) -> dict:
         # Update the world model
-        metrics = self.world_model.train(transitions)
+        posterior_zs, deterministic_hs, metrics = self.world_model.train(transitions)
+
+        # Update the agent
 
         return metrics
 

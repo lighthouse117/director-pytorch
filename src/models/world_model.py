@@ -66,7 +66,9 @@ class WorldModel(torch.nn.Module):
             params=self.parameters(), lr=config.learning_rate
         )
 
-    def train(self, transitions: TransitionSequenceBatch) -> dict:
+    def train(
+        self, transitions: TransitionSequenceBatch
+    ) -> tuple[torch.Tensor, torch.Tensor, dict]:
         """
         Update the world model using transition data.
         """
@@ -83,9 +85,9 @@ class WorldModel(torch.nn.Module):
 
         chunk_length = len(transitions.observations[0])
 
-        prior_distributions: list[torch.distributions.Distribution] = []
-        posterior_distributions: list[torch.distributions.Distribution] = []
-        deterministic_hs: list[torch.Tensor] = []
+        prior_z_distributions: list[torch.distributions.Distribution] = []
+        posterior_z_distributions: list[torch.distributions.Distribution] = []
+        deterministic_hs = []
 
         # Iterate over timesteps of a chunk
         for t in range(chunk_length):
@@ -110,8 +112,8 @@ class WorldModel(torch.nn.Module):
             )
 
             # Append to list for calculating loss later
-            prior_distributions.append(prior_stochastic_z_distribution)
-            posterior_distributions.append(posterior_stochastic_z_distribution)
+            prior_z_distributions.append(prior_stochastic_z_distribution)
+            posterior_z_distributions.append(posterior_stochastic_z_distribution)
             deterministic_hs.append(deterministic_h)
 
             # Update previous states
@@ -124,14 +126,14 @@ class WorldModel(torch.nn.Module):
 
         deterministic_hs = torch.cat(deterministic_hs, dim=0)
         # Get reparameterized samples of posterior z
-        sampled_posteriors = torch.cat(
-            [posterior.rsample() for posterior in posterior_distributions], dim=0
+        posterior_z_samples = torch.cat(
+            [posterior.rsample() for posterior in posterior_z_distributions], dim=0
         )
 
         if self.config.decoder.output == "gaussian":
             # Get gaussian distributions of reconstructed images
             reconstructed_obs_distributions: torch.distributions.Distribution = (
-                self.decoder(deterministic_hs, sampled_posteriors)
+                self.decoder(deterministic_hs, posterior_z_samples)
             )
             # Calculate reconstruction loss (log likelihood version)
             # How likely is the input image generated from the predicted distribution
@@ -145,7 +147,7 @@ class WorldModel(torch.nn.Module):
             reconstructed_images = reconstructed_obs_distributions.mean
         else:
             # Get reconstructed images
-            reconstructed_images = self.decoder(deterministic_hs, sampled_posteriors)
+            reconstructed_images = self.decoder(deterministic_hs, posterior_z_samples)
             # Reconstruction loss (MSE version)
             reconstruction_loss = torch.nn.functional.mse_loss(
                 reconstructed_images,
@@ -154,30 +156,30 @@ class WorldModel(torch.nn.Module):
                 ),
             )
 
-        save_image(
-            transitions.observations[0][0],
-            "outputs/images/original.png",
-        )
-        save_image(
-            reconstructed_images[0],
-            "outputs/images/reconstructed.png",
-        )
+        # save_image(
+        #     transitions.observations[0][0],
+        #     "outputs/images/original.png",
+        # )
+        # save_image(
+        #     reconstructed_images[0],
+        #     "outputs/images/reconstructed.png",
+        # )
 
         # Convert list of distributions to a single distribution
-        prior = torch.distributions.Independent(
+        prior_zs = torch.distributions.Independent(
             torch.distributions.Normal(
-                torch.cat([prior.mean for prior in prior_distributions], dim=0),
-                torch.cat([prior.stddev for prior in prior_distributions], dim=0),
+                torch.cat([prior.mean for prior in prior_z_distributions], dim=0),
+                torch.cat([prior.stddev for prior in prior_z_distributions], dim=0),
             ),
             reinterpreted_batch_ndims=1,
         )
-        posterior = torch.distributions.Independent(
+        posterior_zs = torch.distributions.Independent(
             torch.distributions.Normal(
                 torch.cat(
-                    [posterior.mean for posterior in posterior_distributions], dim=0
+                    [posterior.mean for posterior in posterior_z_distributions], dim=0
                 ),
                 torch.cat(
-                    [posterior.stddev for posterior in posterior_distributions], dim=0
+                    [posterior.stddev for posterior in posterior_z_distributions], dim=0
                 ),
             ),
             reinterpreted_batch_ndims=1,
@@ -186,13 +188,13 @@ class WorldModel(torch.nn.Module):
         # Calculate KL divergence loss
         # How different is the prior distribution from the posterior distribution
         kl_divergence_loss = torch.distributions.kl.kl_divergence(
-            posterior, prior
+            posterior_zs, prior_zs
         ).mean()
 
         # Calculate reward prediction loss
         reward_distribution: torch.distributions.Distribution = self.reward_head(
             deterministic_hs,
-            sampled_posteriors,
+            posterior_z_samples,
         )
         reward_loss = -reward_distribution.log_prob(
             transitions.rewards.reshape(-1, *transitions.rewards.shape[-1:])
@@ -212,9 +214,10 @@ class WorldModel(torch.nn.Module):
             "kl_divergence_loss": round(kl_divergence_loss.item(), 5),
             "reward_loss": round(reward_loss.item(), 5),
             "total_loss": round(total_loss.item(), 5),
+            "reconstructed_images": reconstructed_images.item(),
         }
 
-        return metrics
+        return posterior_z_samples.detach(), deterministic_hs.detach(), metrics
 
     def evaluate(self):
         pass
