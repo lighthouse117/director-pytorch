@@ -136,11 +136,11 @@ class WorldModel(torch.nn.Module):
         )
         # Calculate reconstruction loss (log likelihood version)
         # How likely is the input image generated from the predicted distribution
-        reconstruction_loss = -reconstructed_obs_distributions.log_prob(
-            # [batch_size, chunk_length, *observation_shape]
-            # -> [batch_size * chunk_length, *observation_shape]
-            transitions.observations.reshape(-1, *transitions.observations.shape[-3:])
-        ).mean()
+        # reconstruction_loss = -reconstructed_obs_distributions.log_prob(
+        #     # [batch_size, chunk_length, *observation_shape]
+        #     # -> [batch_size * chunk_length, *observation_shape]
+        #     transitions.observations.reshape(-1, *transitions.observations.shape[-3:])
+        # ).mean()
 
         # Reconstruction loss (MSE version)
         reconstruction_loss = torch.nn.functional.mse_loss(
@@ -202,10 +202,10 @@ class WorldModel(torch.nn.Module):
         self.optimizer.step()
 
         metrics = {
-            "reconstruction_loss": round(reconstruction_loss.item(), 3),
-            "kl_divergence_loss": round(kl_divergence_loss.item(), 3),
-            "reward_loss": round(reward_loss.item(), 3),
-            "total_loss": round(total_loss.item(), 3),
+            "reconstruction_loss": round(reconstruction_loss.item(), 5),
+            "kl_divergence_loss": round(kl_divergence_loss.item(), 5),
+            "reward_loss": round(reward_loss.item(), 5),
+            "total_loss": round(total_loss.item(), 5),
         }
 
         return metrics

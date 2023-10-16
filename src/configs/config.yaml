@@ -6,6 +6,7 @@ train_every: 5
 
 environment:
   name: MountainCar-v0
+  # name: CartPole-v1
   image_width: 64
   image_height: 64
   seed: 0

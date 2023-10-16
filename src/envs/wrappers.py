@@ -14,7 +14,7 @@ class PixelEnv(gym.ObservationWrapper):
 
     def observation(self, obs):
         # Normalize image from [0, 255] to [-0.5, 0.5]
-        image = obs["pixels"] / 255.0 - 0.5
+        image = obs["pixels"] / 255.0
         return image
 
 

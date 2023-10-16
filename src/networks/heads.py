@@ -130,6 +130,11 @@ class RewardHead(nn.Module):
             nn.ELU(),
             nn.Linear(
                 in_features=config.hidden_size,
+                out_features=config.hidden_size,
+            ),
+            nn.ELU(),
+            nn.Linear(
+                in_features=config.hidden_size,
                 out_features=1,
             ),
         )
