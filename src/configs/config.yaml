@@ -15,7 +15,7 @@ environment:
 replay_buffer:
   capacity: 5000
   batch_size: 16
-  chunk_length: 64
+  chunk_length: 32
 
 
 agent:

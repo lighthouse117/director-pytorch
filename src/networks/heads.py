@@ -100,9 +100,7 @@ class PixelDecoderHead(nn.Module):
             return distribution
         elif self.config.output == "pixel":
             x = self.convs(x)
-            # Sigmoid to ensure the output is between 0 and 1
-            image = torch.sigmoid(x)
-            return image
+            return x
         else:
             raise NotImplementedError
 
