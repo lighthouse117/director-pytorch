@@ -3,7 +3,6 @@ import torch
 from omegaconf import DictConfig
 from models.world_model import WorldModel
 from utils.transition import Transition, TransitionSequenceBatch
-from networks.encoder import PixelEncoder, PixelDecoder
 
 
 class DreamerAgent:

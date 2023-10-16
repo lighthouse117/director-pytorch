@@ -9,7 +9,7 @@ environment:
   image_width: 64
   image_height: 64
   seed: 0
-  action_repeat: 10
+  action_repeat: 4
 
 replay_buffer:
   capacity: 5000
@@ -20,11 +20,11 @@ replay_buffer:
 agent:
   world_model:
     embedded_observation_size: 1024
-    deterministic_state_size: 64
-    stochastic_state_size: 64
+    deterministic_state_size: 1024
+    stochastic_state_size: 32
 
     learning_rate: 0.0003
-    clip_grad: 1.0
+    clip_grad: 100.0
 
     encoder:
       depth: 32
@@ -37,16 +37,16 @@ agent:
       stride: 2
 
     representation_model:
-      hidden_size: 64
+      hidden_size: 512
     
     transition_model:
-      hidden_size: 64
+      hidden_size: 512
 
     recurrent_model:
-      hidden_size: 64
+      hidden_size: 512
 
     reward_head:
-      hidden_size: 64
+      hidden_size: 512
     
     cost_model:
       hidden_size: 64
