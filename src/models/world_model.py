@@ -134,13 +134,19 @@ class WorldModel(torch.nn.Module):
                 sampled_posteriors,
             )
         )
-        # Calculate reconstruction loss
+        # Calculate reconstruction loss (log likelihood version)
         # How likely is the input image generated from the predicted distribution
         reconstruction_loss = -reconstructed_obs_distributions.log_prob(
             # [batch_size, chunk_length, *observation_shape]
             # -> [batch_size * chunk_length, *observation_shape]
             transitions.observations.reshape(-1, *transitions.observations.shape[-3:])
         ).mean()
+
+        # Reconstruction loss (MSE version)
+        reconstruction_loss = torch.nn.functional.mse_loss(
+            reconstructed_obs_distributions.mean,
+            transitions.observations.reshape(-1, *transitions.observations.shape[-3:]),
+        )
 
         save_image(
             transitions.observations[0][0],
