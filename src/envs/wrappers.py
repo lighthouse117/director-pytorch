@@ -13,8 +13,8 @@ class PixelEnv(gym.ObservationWrapper):
         super().__init__(env)
 
     def observation(self, obs):
-        # Normalize image from [0, 255] to [0, 1]
-        image = obs["pixels"] / 255.0
+        # Normalize image from [0, 255] to [-0.5, 0.5]
+        image = obs["pixels"] / 255.0 - 0.5
         return image
 
 
@@ -38,6 +38,7 @@ class ResizeImageEnv(gym.ObservationWrapper):
     def observation(self, obs):
         image = cv2.resize(obs, self.size)
         return image
+
 
 class ActionRepeatEnv(gym.Wrapper):
     """Repeat action for n steps."""
