@@ -7,7 +7,8 @@ from agents.dreamer import DreamerAgent
 from utils.replay import ReplayBuffer
 from drivers.driver import Driver
 from envs.wrappers import ChannelFirstEnv, PixelEnv, ResizeImageEnv, ActionRepeatEnv
-from envs.dmc import DMCGym
+from envs.dmc import DMCPixelEnv
+from envs.space import get_env_spaces
 
 
 # Use hydra to load configs
@@ -38,24 +39,25 @@ def main(config: DictConfig):
     # Create environment
     env_name = config.environment.name
     # env = ActionRepeatEnv(gym.make(env_name, render_mode="rgb_array"), repeat=config.environment.action_repeat)
-    env = DMCGym(domain="cartpole", task="swingup")
-    env = PixelEnv(env)
-    env = ResizeImageEnv(
-        env, (config.environment.image_width, config.environment.image_height)
-    )
+    env = DMCPixelEnv(domain="cartpole", task="swingup")
+    # env = PixelEnv(env)
+    # env = ResizeImageEnv(
+    #     env, (config.environment.image_width, config.environment.image_height)
+    # )
     env = ChannelFirstEnv(env)
-    obs, _ = env.reset()
-    obs_shape = obs.shape
-    action_size = env.action_space.n
 
+
+    obs_shape, action_size, action_discrete = get_env_spaces(env)
     print(f"< {env_name} >")
     print(f"observation space: {obs_shape}")
-    print(f"action size: {action_size}\n")
+    print(f"action space: {action_size} ({'discrete' if action_discrete else 'continuous'})")
+
 
     # Create agent
     agent = DreamerAgent(
         observation_shape=obs_shape,
         action_size=action_size,
+        action_discrete=action_discrete,
         device=config.device,
         config=config.agent,
     )
@@ -64,6 +66,7 @@ def main(config: DictConfig):
     buffer = ReplayBuffer(
         observation_shape=obs_shape,
         action_size=action_size,
+        action_discrete=action_discrete,
         device=config.device,
         config=config.replay_buffer,
     )
