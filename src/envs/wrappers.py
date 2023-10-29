@@ -55,3 +55,6 @@ class ActionRepeatEnv(gym.Wrapper):
             if terminated or truncated:
                 break
         return obs, total_reward, terminated, truncated, info
+
+
+# class BatchEnv

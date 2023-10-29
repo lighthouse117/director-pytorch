@@ -6,7 +6,13 @@ from omegaconf import DictConfig, OmegaConf
 from agents.dreamer import DreamerAgent
 from utils.replay import ReplayBuffer
 from drivers.driver import Driver
-from envs.wrappers import ChannelFirstEnv, PixelEnv, ResizeImageEnv, ActionRepeatEnv
+from envs.wrappers import (
+    ChannelFirstEnv,
+    PixelEnv,
+    ResizeImageEnv,
+    ActionRepeatEnv,
+    # BatchEnv,
+)
 from envs.dmc import DMCPixelEnv
 from envs.space import get_env_spaces
 
@@ -38,7 +44,10 @@ def main(config: DictConfig):
 
     # Create environment
     env_name = config.environment.name
-    # env = ActionRepeatEnv(gym.make(env_name, render_mode="rgb_array"), repeat=config.environment.action_repeat)
+    # env = ActionRepeatEnv(
+    #     gym.make(env_name, render_mode="rgb_array"),
+    #     repeat=config.environment.action_repeat,
+    # )
     env = DMCPixelEnv(domain="cartpole", task="swingup")
     # env = PixelEnv(env)
     # env = ResizeImageEnv(
@@ -46,12 +55,12 @@ def main(config: DictConfig):
     # )
     env = ChannelFirstEnv(env)
 
-
     obs_shape, action_size, action_discrete = get_env_spaces(env)
     print(f"< {env_name} >")
     print(f"observation space: {obs_shape}")
-    print(f"action space: {action_size} ({'discrete' if action_discrete else 'continuous'})")
-
+    print(
+        f"action space: {action_size} ({'discrete' if action_discrete else 'continuous'})"
+    )
 
     # Create agent
     agent = DreamerAgent(

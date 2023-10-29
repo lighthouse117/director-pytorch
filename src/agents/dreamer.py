@@ -1,4 +1,6 @@
 import torch
+import random
+import numpy as np
 
 from omegaconf import DictConfig
 from models.world_model import WorldModel
@@ -38,10 +40,8 @@ class DreamerAgent:
 
     def policy(self, observation: torch.Tensor) -> torch.Tensor:
         if self.action_discrete:
-            action = torch.randint(
-                low=0, high=self.action_size, size=(1,), device=self.device
-            )
+            action = random.randint(0, self.action_size - 1)
         else:
-            action = torch.randn(self.action_size, device=self.device)
+            action = np.random.uniform(-1, 1, self.action_size)
 
         return action

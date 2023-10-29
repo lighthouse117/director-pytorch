@@ -98,6 +98,8 @@ class DMCPixelEnv(Env):
     def step(self, action):
         if action.dtype.kind == "f":
             action = action.astype(np.float32)
+        # print("action", action)
+        # print("action_space", self._action_space)
         assert self._action_space.contains(action)
         timestep = self._env.step(action)
         # observation is image
@@ -123,4 +125,7 @@ class DMCPixelEnv(Env):
         return observation, info
 
     def render(self, camera_id=0):
-        return self._env.physics.render(height=self.image_size[0], width=self.image_size[1], camera_id=camera_id)
+        image = self._env.physics.render(
+            height=self.image_size[0], width=self.image_size[1], camera_id=camera_id
+        )
+        return image / 255.0

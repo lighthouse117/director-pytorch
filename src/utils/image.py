@@ -2,10 +2,11 @@ import numpy as np
 from PIL import Image
 
 
-def save_image(image: np.ndarray, path: str):
+def save_image(image: np.ndarray, path: str, normalize: bool = True):
     """Save an image to a file."""
-    image = image * 255
-    image = np.clip(image, 0, 255).astype(np.uint8)
+    if normalize:
+        image = image * 255
+        image = np.clip(image, 0, 255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
     pil_image = Image.fromarray(image)
     pil_image.save(path)
