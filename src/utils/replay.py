@@ -10,6 +10,7 @@ class ReplayBuffer:
         self,
         observation_shape: tuple[int, ...],
         action_size: int,
+        action_discrete: bool,
         device: str,
         config: DictConfig,
     ):

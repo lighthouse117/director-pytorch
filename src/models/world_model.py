@@ -13,6 +13,7 @@ class WorldModel(torch.nn.Module):
         self,
         observation_shape: tuple[int, ...],
         action_size: int,
+        action_discrete: bool,
         device: str,
         config: DictConfig,
     ):
@@ -156,14 +157,14 @@ class WorldModel(torch.nn.Module):
                 ),
             )
 
-        # save_image(
-        #     transitions.observations[0][0],
-        #     "outputs/images/original.png",
-        # )
-        # save_image(
-        #     reconstructed_images[0],
-        #     "outputs/images/reconstructed.png",
-        # )
+        save_image(
+            transitions.observations[0][0],
+            "outputs/images/original.png",
+        )
+        save_image(
+            reconstructed_images[0],
+            "outputs/images/reconstructed.png",
+        )
 
         # Convert list of distributions to a single distribution
         prior_zs = torch.distributions.Independent(
@@ -214,10 +215,10 @@ class WorldModel(torch.nn.Module):
             "kl_divergence_loss": round(kl_divergence_loss.item(), 5),
             "reward_loss": round(reward_loss.item(), 5),
             "total_loss": round(total_loss.item(), 5),
-            "reconstructed_images": reconstructed_images.item(),
+            # "reconstructed_images": reconstructed_images,
         }
 
-        return posterior_z_samples.detach(), deterministic_hs.detach(), metrics
+        return posterior_z_samples, deterministic_hs, metrics
 
     def evaluate(self):
         pass

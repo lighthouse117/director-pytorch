@@ -55,6 +55,7 @@ docker run -it --rm \
     --gpus device=$GPU_NUMBER \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v $(pwd)/src:/workspace \
+    -v ~/mujoco210:/root/.mujoco/mujoco210 \
     --ipc=host \
     --net=host \
     -e DISPLAY=$DISPLAY \

@@ -59,8 +59,8 @@ class Driver:
         print("Start training...\n")
 
         while total_step < max_steps:
-            # action = self.agent.policy(obs)
-            action = self.env.action_space.sample()
+            action = self.agent.policy(obs)
+            # action = self.env.action_space.sample()
 
             # Take a step in the environment
             next_obs, reward, terminated, truncated, info = self.env.step(action)

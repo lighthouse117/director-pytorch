@@ -41,20 +41,21 @@ def _flatten_obs(obs, dtype=np.float32):
     return np.concatenate(obs_pieces, axis=0).astype(dtype)
 
 
-class DMCGym(Env):
+class DMCPixelEnv(Env):
     def __init__(
         self,
         domain,
         task,
         task_kwargs={},
         environment_kwargs={},
-        rendering="egl",
+        rendering="glfw",
+        image_size=(64, 64),
     ):
         """TODO comment up"""
 
         # for details see https://github.com/deepmind/dm_control
         assert rendering in ["glfw", "egl", "osmesa"]
-        os.environ["MUJOCO_GL"] = rendering
+        # os.environ["MUJOCO_GL"] = rendering
 
         self._env = suite.load(
             domain,
@@ -68,6 +69,8 @@ class DMCGym(Env):
 
         self._observation_space = _spec_to_box(self._env.observation_spec().values())
         self._action_space = _spec_to_box([self._env.action_spec()])
+
+        self.image_size = image_size
 
         # set seed if provided with task_kwargs
         if "random" in task_kwargs:
@@ -97,7 +100,8 @@ class DMCGym(Env):
             action = action.astype(np.float32)
         assert self._action_space.contains(action)
         timestep = self._env.step(action)
-        observation = _flatten_obs(timestep.observation)
+        # observation is image
+        observation = self.render()
         reward = timestep.reward
         termination = False  # we never reach a goal
         truncation = timestep.last()
@@ -113,9 +117,10 @@ class DMCGym(Env):
         if options:
             logging.warn("Currently doing nothing with options={:}".format(options))
         timestep = self._env.reset()
-        observation = _flatten_obs(timestep.observation)
+        # observation = _flatten_obs(timestep.observation)
+        observation = self.render()
         info = {}
         return observation, info
 
-    def render(self, height, width, camera_id=0):
-        return self._env.physics.render(height=height, width=width, camera_id=camera_id)
+    def render(self, camera_id=0):
+        return self._env.physics.render(height=self.image_size[0], width=self.image_size[1], camera_id=camera_id)
