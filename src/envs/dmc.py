@@ -128,4 +128,4 @@ class DMCPixelEnv(Env):
         image = self._env.physics.render(
             height=self.image_size[0], width=self.image_size[1], camera_id=camera_id
         )
-        return image / 255.0
+        return image

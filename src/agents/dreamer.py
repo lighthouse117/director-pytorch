@@ -34,7 +34,7 @@ class DreamerAgent:
             config=config.world_model,
         )
 
-        self.critic = Policy(
+        self.policy = Policy(
             observation_shape=observation_shape,
             action_size=action_size,
             action_discrete=action_discrete,
@@ -47,19 +47,32 @@ class DreamerAgent:
 
     def train(self, transitions: TransitionSequenceBatch) -> dict:
         # Update the world model
-        posterior_zs, deterministic_hs, metrics = self.world_model.train(transitions)
+        stochastic_posterior_zs, deterministic_hs, metrics = self.world_model.train(
+            transitions
+        )
 
-        # Predict
+        # Predict reward
+        imagined_rewards_distribution: torch.distributions.Distribution = (
+            self.world_model.reward_head(deterministic_hs, stochastic_posterior_zs)
+        )
+        imagined_rewards = imagined_rewards_distribution.mean
+
+        values = self.policy.critic(deterministic_hs, stochastic_posterior_zs)
+
+        for t in range(self.config.imagination_horizon):
+            imagined_rewards = self.world_model.reward_head(
+                deterministic_hs, stochastic_posterior_zs
+            )
 
         # Update the agent
-        self.critic
+        self.criti
 
         return metrics
 
-    def policy(self, observation: torch.Tensor) -> torch.Tensor:
-        if self.action_discrete:
-            action = random.randint(0, self.action_size - 1)
-        else:
-            action = np.random.uniform(-1, 1, self.action_size)
+    # def policy(self, observation: torch.Tensor) -> torch.Tensor:
+    #     if self.action_discrete:
+    #         action = random.randint(0, self.action_size - 1)
+    #     else:
+    #         action = np.random.uniform(-1, 1, self.action_size)
 
-        return action
+    #     return action

@@ -77,13 +77,17 @@ class WorldModel(torch.nn.Module):
         )
 
     def train(
-        self, transitions: TransitionSequenceBatch
+        self,
+        transitions: TransitionSequenceBatch,
     ) -> tuple[torch.Tensor, torch.Tensor, dict]:
         """
         Update the world model using transition data.
         """
+        # Normalize observation
+        observations = transitions.observations / 255.0 - 0.5
+
         # Encode observations
-        embeded_observation = self.encoder(transitions.observations)
+        embedded_observation = self.encoder(observations)
 
         # Initial input for recurrent model
         prev_deterministic_h = torch.zeros(
@@ -116,7 +120,7 @@ class WorldModel(torch.nn.Module):
             # (called Posterior because it is after seeing observation)
             posterior_stochastic_z_distribution: torch.distributions.Distribution = (
                 self.representation_model(
-                    embeded_observation[:, t],
+                    embedded_observation[:, t],
                     deterministic_h,
                 )
             )
@@ -132,7 +136,7 @@ class WorldModel(torch.nn.Module):
 
         # The state list has batch_size * chunk_length elements
         # We can regard them as a single batch of size (batch_size * chunk_length)
-        # because we don't use recurrent model from here
+        # because we don't use recurrent model hereafter
 
         deterministic_hs = torch.cat(deterministic_hs, dim=0)
         # Get reparameterized samples of posterior z
@@ -150,9 +154,7 @@ class WorldModel(torch.nn.Module):
             reconstruction_loss = -reconstructed_obs_distributions.log_prob(
                 #     # [batch_size, chunk_length, *observation_shape]
                 #     # -> [batch_size * chunk_length, *observation_shape]
-                transitions.observations.reshape(
-                    -1, *transitions.observations.shape[-3:]
-                )
+                observations.reshape(-1, *observations.shape[-3:])
             ).mean()
             reconstructed_images = reconstructed_obs_distributions.mean
         else:
@@ -161,13 +163,11 @@ class WorldModel(torch.nn.Module):
             # Reconstruction loss (MSE version)
             reconstruction_loss = torch.nn.functional.mse_loss(
                 reconstructed_images,
-                transitions.observations.reshape(
-                    -1, *transitions.observations.shape[-3:]
-                ),
+                observations.reshape(-1, *observations.shape[-3:]),
             )
 
         save_image(
-            transitions.observations[0][0],
+            observations[0][0],
             "outputs/images/original.png",
         )
         save_image(
@@ -227,7 +227,7 @@ class WorldModel(torch.nn.Module):
             # "reconstructed_images": reconstructed_images,
         }
 
-        return posterior_z_samples, deterministic_hs, metrics
+        return posterior_z_samples.detach(), deterministic_hs.detach(), metrics
 
     def evaluate(self):
         pass
