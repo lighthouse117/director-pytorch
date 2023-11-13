@@ -23,7 +23,7 @@ class RepresentationModel(nn.Module):
 
     def __init__(
         self,
-        embeded_observation_size: int,
+        embedded_observation_size: int,
         deterministic_state_size: int,
         stochastic_state_size: int,
         config: DictConfig,
@@ -32,7 +32,7 @@ class RepresentationModel(nn.Module):
 
         self.network = nn.Sequential(
             nn.Linear(
-                embeded_observation_size + deterministic_state_size, config.hidden_size
+                embedded_observation_size + deterministic_state_size, config.hidden_size
             ),
             nn.ELU(),
             nn.Linear(config.hidden_size, stochastic_state_size * 2),

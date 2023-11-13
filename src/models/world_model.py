@@ -14,51 +14,60 @@ class WorldModel(torch.nn.Module):
         observation_shape: tuple[int, ...],
         action_size: int,
         action_discrete: bool,
+        embedded_observation_size: int,
+        deterministic_state_size: int,
+        stochastic_state_size: int,
         device: str,
         config: DictConfig,
     ):
         super().__init__()
 
+        self.observation_shape = observation_shape
+        self.action_size = action_size
+        self.action_discrete = action_discrete
+        self.embedded_observation_size = embedded_observation_size
+        self.deterministic_state_size = deterministic_state_size
+        self.stochastic_state_size = stochastic_state_size
         self.device = device
         self.config = config
 
         # Models
         self.encoder = PixelEncoder(
             observation_shape=observation_shape,
-            embedded_observation_size=config.embedded_observation_size,
+            embedded_observation_size=embedded_observation_size,
             config=config.encoder,
         ).to(device)
 
         self.representation_model = RepresentationModel(
-            embeded_observation_size=config.embedded_observation_size,
-            deterministic_state_size=config.deterministic_state_size,
-            stochastic_state_size=config.stochastic_state_size,
+            embeded_observation_size=embedded_observation_size,
+            deterministic_state_size=deterministic_state_size,
+            stochastic_state_size=stochastic_state_size,
             config=config.representation_model,
         ).to(device)
 
         self.transition_model = TransitionModel(
-            deterministic_state_size=config.deterministic_state_size,
-            stochastic_state_size=config.stochastic_state_size,
+            deterministic_state_size=deterministic_state_size,
+            stochastic_state_size=stochastic_state_size,
             config=config.transition_model,
         ).to(device)
 
         self.recurrent_model = RecurrentModel(
-            deterministic_state_size=config.deterministic_state_size,
-            stochastic_state_size=config.stochastic_state_size,
+            deterministic_state_size=deterministic_state_size,
+            stochastic_state_size=stochastic_state_size,
             action_size=action_size,
             config=config.recurrent_model,
         ).to(device)
 
         self.decoder = PixelDecoderHead(
             observation_shape=observation_shape,
-            deterministic_state_size=config.deterministic_state_size,
-            stochastic_state_size=config.stochastic_state_size,
+            deterministic_state_size=deterministic_state_size,
+            stochastic_state_size=stochastic_state_size,
             config=config.decoder,
         ).to(device)
 
         self.reward_head = RewardHead(
-            deterministic_state_size=config.deterministic_state_size,
-            stochastic_state_size=config.stochastic_state_size,
+            deterministic_state_size=deterministic_state_size,
+            stochastic_state_size=stochastic_state_size,
             config=config.reward_head,
         ).to(device)
 
@@ -78,10 +87,10 @@ class WorldModel(torch.nn.Module):
 
         # Initial input for recurrent model
         prev_deterministic_h = torch.zeros(
-            len(transitions), self.config.deterministic_state_size
+            len(transitions), self.deterministic_state_size
         ).to(self.device)
         prev_stochastic_z = torch.zeros(
-            len(transitions), self.config.stochastic_state_size
+            len(transitions), self.stochastic_state_size
         ).to(self.device)
 
         chunk_length = len(transitions.observations[0])

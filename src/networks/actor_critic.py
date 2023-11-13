@@ -39,7 +39,11 @@ class Actor(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, deter_h: Tensor, stoch_z: Tensor) -> Tensor:
+    def forward(
+        self,
+        deter_h: Tensor,
+        stoch_z: Tensor,
+    ) -> Tensor:
         x = torch.cat([deter_h, stoch_z], dim=-1)
         x = self.network(x)
 

@@ -19,10 +19,11 @@ replay_buffer:
 
 
 agent:
+  embedded_observation_size: 1024
+  deterministic_state_size: 1024
+  stochastic_state_size: 32
+  
   world_model:
-    embedded_observation_size: 1024
-    deterministic_state_size: 1024
-    stochastic_state_size: 32
 
     learning_rate: 0.0003
     clip_grad: 100.0
@@ -52,7 +53,19 @@ agent:
     
     cost_model:
       hidden_size: 64
-      
+  
+  policy:
+    actor:
+      hidden_size: 512
+      learning_rate: 0.0003
+      clip_grad: 100.0
+      entropy_coefficient: 0.01
+      value_coefficient: 0.5
+    
+    critic:
+      hidden_size: 512
+      learning_rate: 0.0003
+      clip_grad: 100.0
   
 
 
