@@ -1,6 +1,7 @@
 import torch
 import hydra
 import gymnasium as gym
+import wandb
 
 from omegaconf import DictConfig, OmegaConf
 from agents.dreamer import DreamerAgent
@@ -42,6 +43,11 @@ def main(config: DictConfig):
     print(OmegaConf.to_yaml(config))
 
     # ====================================================
+
+    wandb.init(
+        project="directorch",
+        config=dict(config),
+    )
 
     # Create environment
     env_name = config.environment.name

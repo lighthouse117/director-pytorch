@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 
 class RepresentationModel(nn.Module):
     """
-    Infer the stochastic state (z) from the embed observation (o) and the deterministic state (h).
+    Infer the posterior stochastic state (z) from the embed observation (o) and the deterministic state (h).
 
     z ~ p(z|o, h)
 
@@ -62,7 +62,7 @@ class RepresentationModel(nn.Module):
 
 class TransitionModel(nn.Module):
     """
-    Predict the stochastic state (z) from the deterministic state (h) without observation (o).
+    Predict the prior stochastic state (z) from the deterministic state (h) without observation (o).
 
     z ~ p(z|h)
 

@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import torch
+import wandb
 
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -58,6 +59,7 @@ class Driver:
         obs, info = self.env.reset()
         env_step = 0
         episode_reward = 0
+        episode_rewards = []
 
         print("Start training...\n")
 
@@ -98,15 +100,16 @@ class Driver:
             episode_reward += reward
 
             if terminated or truncated:
-                print(
-                    f"Episode finished after {env_step} steps. Total reward: {episode_reward}"
-                )
+                # print(
+                #     f"Episode finished after {env_step} steps. Total reward: {episode_reward}"
+                # )
                 obs, info = self.env.reset()
                 env_step = 0
                 prev_deterministic_h = None
                 prev_stochastic_z = None
                 prev_action = None
                 episode_reward = 0
+                episode_rewards.append(episode_reward)
 
             if total_step % train_every == 0:
                 # print(f"Training at step {total_step}.")
@@ -120,5 +123,17 @@ class Driver:
             # Print metrics
             if total_step % 1000 == 0:
                 print(f"Step {total_step}: {metrics}")
+                print(f"Average reward: {np.mean(episode_rewards)}")
+                wandb.log(
+                    step=total_step,
+                    data={
+                        "reward": np.mean(episode_rewards),
+                    },
+                )
+                wandb.log(
+                    step=total_step,
+                    data=metrics,
+                )
+                episode_rewards = []
 
         print("Training finished.")
