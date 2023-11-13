@@ -15,10 +15,12 @@ class Actor(nn.Module):
         deterministic_state_size: int,
         stochastic_state_size: int,
         action_size: int,
+        action_discrete: bool,
         config: DictConfig,
     ):
         super().__init__()
 
+        self.action_discrete = action_discrete
         self.config = config
 
         self.network = nn.Sequential(
@@ -43,19 +45,32 @@ class Actor(nn.Module):
         self,
         deter_h: Tensor,
         stoch_z: Tensor,
-    ) -> Tensor:
+    ) -> torch.distributions.Distribution:
+        # Concatenate the inputs
         x = torch.cat([deter_h, stoch_z], dim=-1)
+
+        # Pass the inputs through the linear layer
         x = self.network(x)
 
-        onehot_distribution = torch.distributions.OneHotCategoricalStraightThrough(
-            logits=x
-        )
+        if self.action_discrete:
+            # Create the categorical distribution
+            onehot_distribution = torch.distributions.OneHotCategoricalStraightThrough(
+                logits=x
+            )
+            # Use straight-through trick for discrete actions
+            # sample = sample + prob - prob.detach()
+            # (Gumbel-Softmax also works but needs hyperparameter tuning)
+            action = onehot_distribution.rsample()
+        else:
+            # Create the Gaussian distribution
+            # Variance is fixed to 1
+            base_distribution = torch.distributions.Normal(x, 1)
 
-        # Use straight-through trick for discrete actions
-        # sample = sample + prob - prob.detach()
-        # (Gumbel-Softmax also works but needs hyperparameter tuning)
-        action = onehot_distribution.rsample()
-
+            # Need each dimension to be independent
+            distribution = torch.distributions.Independent(
+                base_distribution, reinterpreted_batch_ndims=1
+            )
+            action = distribution.rsample()
         return action
 
 
@@ -95,8 +110,15 @@ class Critic(nn.Module):
         self,
         deter_h: Tensor,
         stoch_z: Tensor,
-        action: Tensor,
-    ) -> Tensor:
-        x = torch.cat([deter_h, stoch_z, action], dim=-1)
-        x = self.network(x)
-        return x
+    ) -> torch.distributions.Distribution:
+        # Concatenate the inputs
+        x = torch.cat([deter_h, stoch_z], dim=-1)
+
+        # Pass the inputs through the linear layer
+        mean: Tensor = self.network(x)
+
+        # Create the Gaussian distribution
+        # Variance is fixed to 1
+        dist = torch.distributions.Normal(mean, 1)
+
+        return dist

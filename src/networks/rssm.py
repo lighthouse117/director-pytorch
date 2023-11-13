@@ -41,10 +41,10 @@ class RepresentationModel(nn.Module):
 
     def forward(
         self,
-        embeded_o: Tensor,
+        embedded_o: Tensor,
         deter_h: Tensor,
     ) -> torch.distributions.Distribution:
-        x = torch.cat([embeded_o, deter_h], dim=-1)
+        x = torch.cat([embedded_o, deter_h], dim=-1)
         x = self.network(x)
 
         # Split concatenated output into mean and standard deviation

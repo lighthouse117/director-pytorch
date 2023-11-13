@@ -1,9 +1,13 @@
 import numpy as np
+import torch
 from PIL import Image
 
 
-def save_image(image: np.ndarray, path: str, normalize: bool = True):
+def save_image(image: torch.Tensor, path: str, normalize: bool = True):
     """Save an image to a file."""
+    # print(image.max())
+    # print(image.min())
+    image = image.detach().cpu().numpy()
     if normalize:
         image = (image + 0.5) * 255
         image = np.clip(image, 0, 255).astype(np.uint8)

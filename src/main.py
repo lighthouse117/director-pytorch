@@ -13,7 +13,8 @@ from envs.wrappers import (
     ActionRepeatEnv,
     # BatchEnv,
 )
-from envs.dmc import DMCPixelEnv
+
+# from envs.dmc import DMCPixelEnv
 from envs.space import get_env_spaces
 
 
@@ -44,15 +45,15 @@ def main(config: DictConfig):
 
     # Create environment
     env_name = config.environment.name
-    # env = ActionRepeatEnv(
-    #     gym.make(env_name, render_mode="rgb_array"),
-    #     repeat=config.environment.action_repeat,
-    # )
-    env = DMCPixelEnv(domain="cartpole", task="swingup")
-    # env = PixelEnv(env)
-    # env = ResizeImageEnv(
-    #     env, (config.environment.image_width, config.environment.image_height)
-    # )
+    env = ActionRepeatEnv(
+        gym.make(env_name, render_mode="rgb_array"),
+        repeat=config.environment.action_repeat,
+    )
+    # env = DMCPixelEnv(domain="cartpole", task="swingup")
+    env = PixelEnv(env)
+    env = ResizeImageEnv(
+        env, (config.environment.image_width, config.environment.image_height)
+    )
     env = ChannelFirstEnv(env)
 
     obs_shape, action_size, action_discrete = get_env_spaces(env)

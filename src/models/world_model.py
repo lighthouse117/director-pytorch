@@ -5,7 +5,9 @@ from networks.encoder import PixelEncoder
 from networks.heads import PixelDecoderHead, RewardHead
 from networks.rssm import RepresentationModel, TransitionModel, RecurrentModel
 from utils.transition import TransitionSequenceBatch
-from torchvision.utils import save_image
+from utils.image import save_image
+
+# from torchvision.utils import save_image
 
 
 class WorldModel(torch.nn.Module):
@@ -39,7 +41,7 @@ class WorldModel(torch.nn.Module):
         ).to(device)
 
         self.representation_model = RepresentationModel(
-            embeded_observation_size=embedded_observation_size,
+            embedded_observation_size=embedded_observation_size,
             deterministic_state_size=deterministic_state_size,
             stochastic_state_size=stochastic_state_size,
             config=config.representation_model,
@@ -228,6 +230,49 @@ class WorldModel(torch.nn.Module):
         }
 
         return posterior_z_samples.detach(), deterministic_hs.detach(), metrics
+
+    def imagine(
+        self,
+        stochastic_zs: torch.Tensor,
+        deterministic_hs: torch.Tensor,
+        horizon: int,
+        actor: torch.nn.Module,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        imagined_deter_hs = []
+        imagined_stoch_zs = []
+        for t in range(horizon):
+            action = actor(
+                deterministic_hs,
+                stochastic_zs,
+            )
+            next_deter_hs = self.recurrent_model(
+                stochastic_zs,
+                action,
+                deterministic_hs,
+            )
+            next_stoch_z_distribution: torch.distributions.Distribution = (
+                self.transition_model(next_deter_hs)
+            )
+            next_stoch_z = next_stoch_z_distribution.rsample()
+
+            deterministic_hs = next_deter_hs
+
+            imagined_deter_hs.append(next_deter_hs)
+            imagined_stoch_zs.append(next_stoch_z)
+
+        imagined_deter_hs = torch.stack(imagined_deter_hs)
+        imagined_stoch_zs = torch.stack(imagined_stoch_zs)
+        # print("imagined_deter_hs.shape", imagined_deter_hs.shape)
+        # print("imagined_stoch_zs.shape", imagined_stoch_zs.shape)
+
+        # Predict reward
+        imagined_rewards_distribution: torch.distributions.Distribution = (
+            self.reward_head(imagined_deter_hs, imagined_stoch_zs)
+        )
+        imagined_rewards = imagined_rewards_distribution.mean
+        # print("imagined_rewards.shape", imagined_rewards.shape)
+
+        return imagined_deter_hs, imagined_stoch_zs, imagined_rewards
 
     def evaluate(self):
         pass

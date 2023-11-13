@@ -37,7 +37,8 @@ class Driver:
             obs, info = self.env.reset()
             while not self.buffer.is_full:
                 progress_bar.update(1)
-                action = self.env.action_space.sample()
+                # action = self.env.action_space.sample()
+                action = 0
                 next_obs, reward, terminated, truncated, info = self.env.step(action)
                 total_step += 1
                 transition = Transition(
@@ -59,8 +60,9 @@ class Driver:
         print("Start training...\n")
 
         while total_step < max_steps:
-            action = self.agent.policy(obs)
+            # action = self.agent.select_aciton(obs)
             # action = self.env.action_space.sample()
+            action = 0
 
             # Take a step in the environment
             next_obs, reward, terminated, truncated, info = self.env.step(action)
@@ -95,8 +97,8 @@ class Driver:
                 # Train agent with the batch data
                 metrics = self.agent.train(transitions)
 
-                # Print metrics
-                if total_step % 1000 == 0:
-                    print(f"Step {total_step}: {metrics}")
+            # Print metrics
+            if total_step % 1000 == 0:
+                print(f"Step {total_step}: {metrics}")
 
         print("Training finished.")
