@@ -1,5 +1,6 @@
 import gymnasium as gym
 import numpy as np
+import torch
 
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -37,8 +38,8 @@ class Driver:
             obs, info = self.env.reset()
             while not self.buffer.is_full:
                 progress_bar.update(1)
-                # action = self.env.action_space.sample()
-                action = 0
+                # Select a random action
+                action = self.env.action_space.sample()
                 next_obs, reward, terminated, truncated, info = self.env.step(action)
                 total_step += 1
                 transition = Transition(
@@ -59,20 +60,27 @@ class Driver:
 
         print("Start training...\n")
 
+        prev_deterministic_h = None
+        prev_stochastic_z = None
+        prev_action = None
+
         while total_step < max_steps:
-            # action = self.agent.select_aciton(obs)
-            # action = self.env.action_space.sample()
-            action = 0
+            action, env_action, deterministic_h, stochastic_z = self.agent.policy(
+                observation=obs,
+                prev_deterministic_h=prev_deterministic_h,
+                prev_stochastic_z=prev_stochastic_z,
+                prev_action=prev_action,
+            )
 
             # Take a step in the environment
-            next_obs, reward, terminated, truncated, info = self.env.step(action)
+            next_obs, reward, terminated, truncated, info = self.env.step(env_action)
 
             env_step += 1
             total_step += 1
 
             transition = Transition(
                 observation=next_obs,
-                action=action,
+                action=env_action,
                 reward=reward,
                 terminated=terminated,
                 truncated=truncated,
@@ -82,11 +90,17 @@ class Driver:
             self.buffer.add(transition)
 
             obs = next_obs
+            prev_deterministic_h = deterministic_h
+            prev_stochastic_z = stochastic_z
+            prev_action = action
 
             if terminated or truncated:
                 # print(f"Episode finished after {env_step} steps.")
                 obs, info = self.env.reset()
                 env_step = 0
+                prev_deterministic_h = None
+                prev_stochastic_z = None
+                prev_action = None
 
             if total_step % train_every == 0:
                 # print(f"Training at step {total_step}.")

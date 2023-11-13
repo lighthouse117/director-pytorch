@@ -45,7 +45,7 @@ class Actor(nn.Module):
         self,
         deter_h: Tensor,
         stoch_z: Tensor,
-    ) -> torch.distributions.Distribution:
+    ) -> torch.Tensor:
         # Concatenate the inputs
         x = torch.cat([deter_h, stoch_z], dim=-1)
 

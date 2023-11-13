@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 from networks.actor_critic import Actor, Critic
 
 
-class Policy(nn.Module):
+class Behavior(nn.Module):
     def __init__(
         self,
         observation_shape: tuple[int, ...],
@@ -50,8 +50,8 @@ class Policy(nn.Module):
 
     def train(
         self,
-        stochastic_zs: torch.Tensor,
         deterministic_hs: torch.Tensor,
+        stochastic_zs: torch.Tensor,
         rewards: torch.Tensor,
     ):
         # Predict value of the state
