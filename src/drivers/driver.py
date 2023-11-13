@@ -57,6 +57,7 @@ class Driver:
 
         obs, info = self.env.reset()
         env_step = 0
+        episode_reward = 0
 
         print("Start training...\n")
 
@@ -94,13 +95,18 @@ class Driver:
             prev_stochastic_z = stochastic_z
             prev_action = action
 
+            episode_reward += reward
+
             if terminated or truncated:
-                # print(f"Episode finished after {env_step} steps.")
+                print(
+                    f"Episode finished after {env_step} steps. Total reward: {episode_reward}"
+                )
                 obs, info = self.env.reset()
                 env_step = 0
                 prev_deterministic_h = None
                 prev_stochastic_z = None
                 prev_action = None
+                episode_reward = 0
 
             if total_step % train_every == 0:
                 # print(f"Training at step {total_step}.")

@@ -10,7 +10,7 @@ environment:
   image_width: 64
   image_height: 64
   seed: 0
-  action_repeat: 4
+  action_repeat: 1
 
 replay_buffer:
   capacity: 500

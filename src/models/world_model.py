@@ -225,7 +225,7 @@ class WorldModel(torch.nn.Module):
             "reconstruction_loss": round(reconstruction_loss.item(), 5),
             "kl_divergence_loss": round(kl_divergence_loss.item(), 5),
             "reward_loss": round(reward_loss.item(), 5),
-            "total_loss": round(total_loss.item(), 5),
+            "wm_total_loss": round(total_loss.item(), 5),
             # "reconstructed_images": reconstructed_images,
         }
 
